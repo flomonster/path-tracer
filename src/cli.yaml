@@ -1,0 +1,10 @@
+name: path-tracer
+version: "1.0"
+about: Path-trace awesome things
+args:
+    - INPUT:
+        required: true
+        help: Input file name
+    - OUTPUT:
+        required: true
+        help: Output image name
