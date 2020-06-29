@@ -4,7 +4,7 @@ about: Path-trace awesome things
 args:
     - INPUT:
         required: true
-        help: Input file name
+        help: Input file name OBJ format
     - OUTPUT:
         required: true
         help: Output image name

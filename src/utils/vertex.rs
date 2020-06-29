@@ -1,6 +1,6 @@
 use cgmath::*;
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 pub struct Vertex {
     pub position: Vector3<f32>,
     pub normal: Vector3<f32>,
