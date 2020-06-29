@@ -20,22 +20,22 @@ impl From<&tobj::Model> for Model {
 
         for i in (0..obj.indices.len()).step_by(3) {
             let mut vertices: Vec<Vertex> = Vec::new();
-            for j in i..(i+3) {
-                vertices.push(
-                    Vertex::new(obj.positions[obj.indices[j] as usize * 3],
-                                obj.positions[obj.indices[j] as usize * 3 + 1],
-                                obj.positions[obj.indices[j] as usize * 3 + 2],
-                                obj.normals[obj.indices[j] as usize * 3],
-                                obj.normals[obj.indices[j] as usize * 3 + 1],
-                                obj.normals[obj.indices[j] as usize * 3 + 2],
-                                obj.texcoords[obj.indices[j] as usize * 2],
-                                obj.texcoords[obj.indices[j] as usize * 2 + 1])
-                )
+            for j in i..(i + 3) {
+                vertices.push(Vertex::new(
+                    obj.positions[obj.indices[j] as usize * 3],
+                    obj.positions[obj.indices[j] as usize * 3 + 1],
+                    obj.positions[obj.indices[j] as usize * 3 + 2],
+                    obj.normals[obj.indices[j] as usize * 3],
+                    obj.normals[obj.indices[j] as usize * 3 + 1],
+                    obj.normals[obj.indices[j] as usize * 3 + 2],
+                    obj.texcoords[obj.indices[j] as usize * 2],
+                    obj.texcoords[obj.indices[j] as usize * 2 + 1],
+                ))
             }
             model.triangles.push(Triangle(
                 vertices[0].clone(),
                 vertices[1].clone(),
-                vertices[2].clone()
+                vertices[2].clone(),
             ));
         }
         model

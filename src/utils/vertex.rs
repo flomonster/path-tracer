@@ -8,7 +8,7 @@ pub struct Vertex {
 }
 
 impl Vertex {
-    pub fn new(px: f32, py: f32, pz: f32, nx: f32, ny: f32,nz: f32, tx: f32, ty: f32) -> Self {
+    pub fn new(px: f32, py: f32, pz: f32, nx: f32, ny: f32, nz: f32, tx: f32, ty: f32) -> Self {
         Vertex {
             position: Vector3::new(px, py, pz),
             normal: Vector3::new(nx, ny, nz),
