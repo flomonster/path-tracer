@@ -2,7 +2,6 @@
 extern crate clap;
 
 mod scene;
-mod utils;
 
 use clap::App;
 use scene::Scene;

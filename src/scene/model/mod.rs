@@ -1,11 +1,16 @@
-use crate::utils::{Material, Vertex};
-use std::path::PathBuf;
+mod material;
+mod triangle;
+mod vertex;
 
-pub struct Triangle(pub Vertex, pub Vertex, pub Vertex);
+pub use material::Material;
+pub use triangle::Triangle;
+pub use vertex::Vertex;
+
+use std::path::PathBuf;
 
 pub struct Model {
     pub triangles: Vec<Triangle>,
-    pub material: Option<Material>,
+    pub material: Material,
 }
 
 impl Model {
@@ -13,7 +18,7 @@ impl Model {
     pub fn new() -> Self {
         Model {
             triangles: vec![],
-            material: None,
+            material: Material::new(),
         }
     }
 
@@ -45,7 +50,7 @@ impl Model {
         }
 
         if let Some(material_id) = obj.material_id {
-            model.material = Some(Material::from((&materials[material_id], path)));
+            model.material = Material::from((&materials[material_id], path));
         }
 
         model

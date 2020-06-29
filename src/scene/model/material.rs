@@ -5,25 +5,25 @@ use std::path::PathBuf;
 #[derive(Clone, Debug)]
 pub struct Material {
     /// Ambient color of the material
-    ambient: Vector3<f32>,
+    pub ambient: Vector3<f32>,
 
     /// Diffuse color of the material
-    diffuse: Vector3<f32>,
+    pub diffuse: Vector3<f32>,
 
     /// Specular color of the material
-    specular: Vector3<f32>,
+    pub specular: Vector3<f32>,
 
     /// Shininess color of the material
-    shininess: f32,
+    pub shininess: f32,
 
     /// Dissolve attribute is the alpha term for the material. Referred to as
     /// dissolve since that's what the MTL file format docs refer to it as
-    dissolve: f32,
+    pub dissolve: f32,
 
     /// Optical density also known as index of refraction. Called
     /// optical_density in the MTL specc. Takes on a value between 0.001 and
     /// 10.0. 1.0 means light does not bend as it passed through the object.
-    optical_density: f32,
+    pub optical_density: f32,
 
     /// Ambient texture image for the material
     ambient_texture: Option<RgbImage>,
@@ -45,6 +45,24 @@ pub struct Material {
 }
 
 impl Material {
+    /// Create default material (green)
+    pub fn new() -> Self {
+        Material {
+            ambient: Vector3::new(0., 0., 0.),
+            diffuse: Vector3::new(0., 1., 0.),
+            specular: Vector3::new(0., 0., 0.),
+            shininess: 0.,
+            dissolve: 0.,
+            optical_density: 1.,
+            ambient_texture: None,
+            diffuse_texture: None,
+            specular_texture: None,
+            normal_texture: None,
+            shininess_texture: None,
+            dissolve_texture: None,
+        }
+    }
+
     /// Check whether the material has an ambient texture
     pub fn has_ambient_texture(&self) -> bool {
         self.ambient_texture.is_some()
