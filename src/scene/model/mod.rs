@@ -63,7 +63,7 @@ impl Model {
             if let Some(dist) = t.intersect(ray) {
                 best = match best {
                     None => Some((dist, t)),
-                    Some((dist_best, _)) if dist_best > dist => Some((dist, t)),
+                    Some((dist_best, _)) if dist_best > dist && dist > 0.001 => Some((dist, t)),
                     _ => best,
                 }
             }
