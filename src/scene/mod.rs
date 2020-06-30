@@ -1,17 +1,23 @@
-mod model;
+mod camera;
+pub mod model;
 
+pub use camera::Camera;
 use model::Model;
 use std::error::Error;
 use std::path::PathBuf;
 use tobj;
 
 pub struct Scene {
-    models: Vec<Model>,
+    pub models: Vec<Model>,
+    pub camera: Camera,
 }
 
 impl Scene {
     pub fn new() -> Self {
-        Scene { models: vec![] }
+        Scene {
+            models: vec![],
+            camera: Camera::new(),
+        }
     }
 
     pub fn load(path: &str) -> Result<Scene, Box<dyn Error>> {

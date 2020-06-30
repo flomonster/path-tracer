@@ -62,36 +62,6 @@ impl Material {
             dissolve_texture: None,
         }
     }
-
-    /// Check whether the material has an ambient texture
-    pub fn has_ambient_texture(&self) -> bool {
-        self.ambient_texture.is_some()
-    }
-
-    /// Check whether the material has a diffuse texture
-    pub fn has_diffuse_texture(&self) -> bool {
-        self.diffuse_texture.is_some()
-    }
-
-    /// Check whether the material has a specular texture
-    pub fn has_specular_texture(&self) -> bool {
-        self.specular_texture.is_some()
-    }
-
-    /// Check whether the material has a normal texture map
-    pub fn has_normal_texture(&self) -> bool {
-        self.normal_texture.is_some()
-    }
-
-    /// Check whether the material has a shininess texture map
-    pub fn has_shininess_texture(&self) -> bool {
-        self.shininess_texture.is_some()
-    }
-
-    /// Check whether the material has a dissolve (alpha) texture map
-    pub fn has_dissolve_texture(&self) -> bool {
-        self.dissolve_texture.is_some()
-    }
 }
 
 impl From<(&tobj::Material, &PathBuf)> for Material {
