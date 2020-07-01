@@ -2,6 +2,8 @@ use crate::Scene;
 use cgmath::*;
 use image::{Rgb, RgbImage};
 
+use crate::scene::model::{Model, Triangle};
+use crate::scene::Light;
 use crate::utils::Ray;
 
 pub struct Raytracer {
@@ -38,7 +40,7 @@ impl Raytracer {
                 let ray = Ray::new(scene.camera.position, ray_dir);
 
                 // Compute pixel color
-                let color = self.render_pixel(scene, &ray);
+                let color = Self::render_pixel(scene, &ray);
 
                 // Set pixel color into image
                 image[(x, y)] = color;
@@ -48,7 +50,7 @@ impl Raytracer {
     }
 
     /// Render the color of a pixel given a ray and the scene
-    fn render_pixel(&self, scene: &Scene, ray: &Ray) -> Rgb<u8> {
+    fn render_pixel(scene: &Scene, ray: &Ray) -> Rgb<u8> {
         let mut color = Vector3::new(0., 0., 0.);
         let mut best = None;
         for model in scene.models.iter() {
@@ -63,7 +65,7 @@ impl Raytracer {
 
         color = match best {
             None => color,
-            Some((_, _, model)) => model.material.diffuse,
+            Some((_, triangle, model)) => Self::compute_shader(scene, triangle, model),
         };
 
         // Convert Vector3 into Rgb
@@ -72,5 +74,20 @@ impl Raytracer {
             (color.y * 255.) as u8,
             (color.z * 255.) as u8,
         ])
+    }
+
+    fn compute_shader(scene: &Scene, triangle: &Triangle, model: &Model) -> Vector3<f32> {
+        let mut color = model.material.diffuse;
+        for light in scene.lights.iter() {
+            match light {
+                Light::Directional(dir, col, intensity) => {
+                    color = color.mul_element_wise(
+                        col * (*intensity) * triangle.0.normal.dot(dir * -1.).max(0.),
+                    );
+                }
+                _ => unimplemented!("Point light compute shader"),
+            }
+        }
+        color
     }
 }

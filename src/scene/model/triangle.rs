@@ -26,7 +26,7 @@ impl Intersectable for Triangle {
 
         let qvec = tvec.cross(v0v1);
         let v = ray.direction.dot(qvec) * invdet;
-        if v < 0. || v > 1. {
+        if v < 0. || u + v > 1. {
             return None;
         }
         Some(v0v2.dot(qvec) * invdet)

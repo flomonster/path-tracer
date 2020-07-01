@@ -5,6 +5,7 @@ mod raytracer;
 mod scene;
 mod utils;
 
+use cgmath::*;
 use clap::App;
 use raytracer::Raytracer;
 use scene::Scene;
@@ -14,13 +15,20 @@ fn main() {
     let yaml = load_yaml!("cli.yaml");
     let matches = App::from_yaml(yaml).get_matches();
 
-    let scene = match Scene::load(matches.value_of("INPUT").unwrap()) {
+    let mut scene = match Scene::load(matches.value_of("INPUT").unwrap()) {
         Err(e) => {
             eprintln!("{}", e);
             exit(2);
         }
         Ok(scene) => scene,
     };
+
+    // Add lights manually
+    scene.lights.push(scene::Light::Directional(
+        Vector3::new(-1., -1., 0.),
+        Vector3::new(1., 1., 1.),
+        1.,
+    ));
 
     // Send scene to Raytracer
     let raytracer = Raytracer::new(300, 150);

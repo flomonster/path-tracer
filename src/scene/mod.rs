@@ -1,7 +1,9 @@
 mod camera;
+mod light;
 pub mod model;
 
 pub use camera::Camera;
+pub use light::Light;
 use model::Model;
 use std::error::Error;
 use std::path::PathBuf;
@@ -10,6 +12,7 @@ use tobj;
 pub struct Scene {
     pub models: Vec<Model>,
     pub camera: Camera,
+    pub lights: Vec<Light>,
 }
 
 impl Scene {
@@ -17,6 +20,7 @@ impl Scene {
         Scene {
             models: vec![],
             camera: Camera::new(),
+            lights: vec![],
         }
     }
 
