@@ -1,10 +1,12 @@
 use crate::Scene;
 use cgmath::*;
 use image::{Rgb, RgbImage};
+use std::sync::{Arc, Mutex};
 
 use crate::scene::model::{Model, Triangle};
 use crate::scene::Light;
 use crate::utils::Ray;
+use rayon::ThreadPoolBuilder;
 
 pub struct Raytracer {
     width: u32,
@@ -19,7 +21,7 @@ impl Raytracer {
 
     /// Render a scene
     pub fn render(&self, scene: &Scene) -> RgbImage {
-        let mut image = RgbImage::new(self.width, self.height);
+        let image = Arc::new(Mutex::new(RgbImage::new(self.width, self.height)));
 
         // Save f32 cast of resolution
         let width = self.width as f32;
@@ -27,26 +29,37 @@ impl Raytracer {
 
         let image_ratio = width / height;
 
-        for x in 0..self.width {
-            for y in 0..self.height {
-                let screen_x = (x as f32 + 0.5) / width * 2. - 1.;
-                let screen_x = screen_x * Rad::tan(scene.camera.fov / 2.) * image_ratio;
+        // Create thread pool
+        let pool = ThreadPoolBuilder::new().num_threads(8).build().unwrap();
 
-                let screen_y = 1. - (y as f32 + 0.5) / height * 2.;
-                let screen_y = screen_y * Rad::tan(scene.camera.fov / 2.);
+        pool.scope(|s| {
+            for x in 0..self.width {
+                for y in 0..self.height {
+                    let image = image.clone();
+                    s.spawn(move |_| {
+                        let screen_x = (x as f32 + 0.5) / width * 2. - 1.;
+                        let screen_x = screen_x * Rad::tan(scene.camera.fov / 2.) * image_ratio;
 
-                // TODO: Take camera angle into acount
-                let ray_dir = Vector3::new(screen_x, screen_y, -1.).normalize();
-                let ray = Ray::new(scene.camera.position, ray_dir);
+                        let screen_y = 1. - (y as f32 + 0.5) / height * 2.;
+                        let screen_y = screen_y * Rad::tan(scene.camera.fov / 2.);
 
-                // Compute pixel color
-                let color = Self::render_pixel(scene, &ray);
+                        // TODO: Take camera angle into acount
+                        let ray_dir = Vector3::new(screen_x, screen_y, -1.).normalize();
+                        let ray = Ray::new(scene.camera.position, ray_dir);
 
-                // Set pixel color into image
-                image[(x, y)] = color;
+                        // Compute pixel color
+                        let color = Self::render_pixel(scene, &ray);
+
+                        // Set pixel color into image
+                        let mut image = image.lock().unwrap();
+                        image[(x, y)] = color;
+                    });
+                }
             }
-        }
-        image
+        });
+
+        // Unwrap image
+        Arc::try_unwrap(image).unwrap().into_inner().unwrap()
     }
 
     /// Render the color of a pixel given a ray and the scene
