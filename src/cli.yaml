@@ -8,3 +8,8 @@ args:
     - OUTPUT:
         required: true
         help: Output image name
+    - resolution:
+        short: r
+        long: resolution
+        default_value: "854x480"
+        help: Set resolution of the computed image

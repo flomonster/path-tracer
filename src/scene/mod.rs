@@ -4,9 +4,9 @@ pub mod model;
 
 pub use camera::Camera;
 pub use light::Light;
+
 use model::Model;
 use std::error::Error;
-use std::path::PathBuf;
 use tobj;
 
 pub struct Scene {
@@ -24,11 +24,11 @@ impl Scene {
         }
     }
 
-    pub fn load(path: &str) -> Result<Scene, Box<dyn Error>> {
-        let mut path = PathBuf::from(path);
-        let (models, materials) = tobj::load_obj(&path, true)?;
+    pub fn load(config: &crate::Config) -> Result<Scene, Box<dyn Error>> {
+        let (models, materials) = tobj::load_obj(&config.input, true)?;
 
         // Get base path needed to retrieve texture materials
+        let mut path = config.input.clone();
         path.pop();
 
         let mut scene = Scene::new();

@@ -6,6 +6,7 @@ use std::sync::{Arc, Mutex};
 use crate::scene::model::Model;
 use crate::scene::Light;
 use crate::utils::{Hit, Intersectable, Ray};
+use crate::Config;
 use rayon::ThreadPoolBuilder;
 
 pub struct Raytracer {
@@ -15,8 +16,11 @@ pub struct Raytracer {
 
 impl Raytracer {
     /// Create new raytracer given resolution
-    pub fn new(width: u32, height: u32) -> Self {
-        Raytracer { width, height }
+    pub fn new(config: &Config) -> Self {
+        Raytracer {
+            width: config.resolution.x,
+            height: config.resolution.y,
+        }
     }
 
     /// Render a scene

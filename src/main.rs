@@ -1,42 +1,48 @@
 #[macro_use]
 extern crate clap;
 
+mod config;
 mod raytracer;
 mod scene;
 mod utils;
+
+pub use config::Config;
 
 use cgmath::*;
 use clap::App;
 use raytracer::Raytracer;
 use scene::Scene;
+use std::error::Error;
 use std::process::exit;
 
 fn main() {
-    let yaml = load_yaml!("cli.yaml");
-    let matches = App::from_yaml(yaml).get_matches();
-
-    let mut scene = match Scene::load(matches.value_of("INPUT").unwrap()) {
+    match run() {
+        Ok(result) => result,
         Err(e) => {
             eprintln!("{}", e);
             exit(2);
         }
-        Ok(scene) => scene,
-    };
+    }
+}
+
+fn run() -> Result<(), Box<dyn Error>> {
+    let yaml = load_yaml!("cli.yaml");
+    let config: Config = Config::load(&App::from_yaml(yaml).get_matches())?;
+
+    let mut scene = Scene::load(&config)?;
 
     // Add lights manually
     scene.lights.push(scene::Light::Directional(
-        Vector3::new(-1., -1., 0.),
+        Vector3::new(-1., -1., -0.3),
         Vector3::new(1., 1., 1.),
         1.,
     ));
 
     // Send scene to Raytracer
-    let raytracer = Raytracer::new(300, 150);
+    let raytracer = Raytracer::new(&config);
     let rendered_image = raytracer.render(&scene);
 
     // Save image
-    if let Err(e) = rendered_image.save(matches.value_of("OUTPUT").unwrap()) {
-        eprintln!("{}", e);
-        exit(2);
-    }
+    rendered_image.save(config.output)?;
+    Ok(())
 }
