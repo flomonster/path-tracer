@@ -6,7 +6,7 @@ pub use material::Material;
 pub use triangle::Triangle;
 pub use vertex::Vertex;
 
-use crate::utils::{Intersectable, Ray};
+use crate::utils::{Hit, Intersectable, Ray};
 use std::path::PathBuf;
 
 pub struct Model {
@@ -56,14 +56,16 @@ impl Model {
 
         model
     }
+}
 
-    pub fn intersect(&self, ray: &Ray) -> Option<(f32, &Triangle)> {
+impl Intersectable for Model {
+    fn intersect(&self, ray: &Ray) -> Option<Hit> {
         let mut best = None;
         for t in self.triangles.iter() {
-            if let Some(dist) = t.intersect(ray) {
+            if let Some(hit) = t.intersect(ray) {
                 best = match best {
-                    None => Some((dist, t)),
-                    Some((dist_best, _)) if dist_best > dist && dist > 0.001 => Some((dist, t)),
+                    None => Some(hit),
+                    Some(best) if best.dist > hit.dist && hit.dist > 0.001 => Some(hit),
                     _ => best,
                 }
             }

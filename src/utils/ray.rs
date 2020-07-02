@@ -1,3 +1,4 @@
+use super::Hit;
 use cgmath::*;
 
 pub struct Ray {
@@ -16,5 +17,5 @@ impl Ray {
 }
 
 pub trait Intersectable {
-    fn intersect(&self, ray: &Ray) -> Option<f32>;
+    fn intersect(&self, ray: &Ray) -> Option<Hit>;
 }
