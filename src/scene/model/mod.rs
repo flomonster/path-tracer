@@ -65,7 +65,7 @@ impl Intersectable for Model {
             if let Some(hit) = t.intersect(ray) {
                 best = match best {
                     None => Some(hit),
-                    Some(best) if best.dist > hit.dist && hit.dist > 0.001 => Some(hit),
+                    Some(best) if best.dist > hit.dist => Some(hit),
                     _ => best,
                 }
             }

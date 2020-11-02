@@ -33,9 +33,9 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     // Add lights manually
     scene.lights.push(scene::Light::Directional(
-        Vector3::new(-1., -1., -0.3),
-        Vector3::new(1., 1., 1.),
-        1.,
+        Vector3::new(-1., -1., -0.3), // Position
+        Vector3::new(1., 1., 1.),     // Direction
+        1.,                           // Intensity
     ));
 
     // Send scene to Raytracer
