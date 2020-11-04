@@ -1,6 +1,7 @@
 use super::Hit;
 use cgmath::*;
 
+#[derive(Debug)]
 pub struct Ray {
     /// Origin of the ray
     pub origin: Vector3<f32>,

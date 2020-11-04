@@ -55,88 +55,129 @@ impl Intersectable for Triangle {
 mod tests {
     use super::*;
     use cgmath::*;
+    use std::env;
+    use std::fs;
+    use std::path::PathBuf;
+    use yaml_rust::yaml;
+    use yaml_rust::YamlLoader;
 
-    #[test]
-    fn not_intersected() {
+    #[derive(Debug)]
+    struct Hit {
+        dist: f32,
+        u: f32,
+        v: f32,
+    }
+
+    #[derive(Debug)]
+    struct Test {
+        pub ray: Ray,
+        pub triangle: Triangle,
+        pub hit: Option<Hit>,
+    }
+
+    fn array_to_vector3(array: &yaml::Array) -> Vector3<f32> {
+        Vector3::new(
+            array[0].as_f64().unwrap() as f32,
+            array[1].as_f64().unwrap() as f32,
+            array[2].as_f64().unwrap() as f32,
+        )
+    }
+
+    fn convert_yaml(yaml: &yaml::Yaml) -> Test {
         let template_vertex = Vertex::new(0., 0., 0., 0., 0., 0., 0., 0.);
-        let ray = Ray::new(Vector3::new(-0.2, 0., 2.), Vector3::new(0., 0., -1.));
-        let triangle = Triangle(
-            Vertex {
-                position: Vector3::new(0., 0., 0.),
-                ..template_vertex
-            },
-            Vertex {
-                position: Vector3::new(1., 0., 0.),
-                ..template_vertex
-            },
-            Vertex {
-                position: Vector3::new(1., 1., 0.),
-                ..template_vertex
-            },
+        let yaml = yaml.as_hash().unwrap();
+        let mut ray = Ray::new(Vector3::new(-0.2, 0., 2.), Vector3::new(0., 0., -1.));
+        let mut triangle = Triangle(
+            template_vertex.clone(),
+            template_vertex.clone(),
+            template_vertex.clone(),
         );
-        assert_eq!(triangle.intersect(&ray), None);
+        let mut hit = None;
+
+        for (key, value) in yaml {
+            let key = key.as_str().unwrap();
+            let value = value.as_hash().unwrap();
+            match key {
+                "hit" => {
+                    let mut u = 0.;
+                    let mut v = 0.;
+                    let mut dist = 0.;
+                    for (key, value) in value {
+                        let key = key.as_str().unwrap();
+                        match key {
+                            "u" => u = value.as_f64().unwrap() as f32,
+                            "v" => v = value.as_f64().unwrap() as f32,
+                            _ => dist = value.as_f64().unwrap() as f32,
+                        }
+                    }
+                    hit = Some(Hit { dist, u, v });
+                }
+                "ray" => {
+                    for (key, value) in value {
+                        let key = key.as_str().unwrap();
+                        match key {
+                            "direction" => {
+                                ray.direction = array_to_vector3(value.as_vec().unwrap())
+                            }
+                            _ => ray.origin = array_to_vector3(value.as_vec().unwrap()),
+                        }
+                    }
+                }
+                "triangle" => {
+                    for (key, value) in value {
+                        let key = key.as_str().unwrap();
+                        match key {
+                            "v0" => triangle.0.position = array_to_vector3(value.as_vec().unwrap()),
+                            "v1" => triangle.1.position = array_to_vector3(value.as_vec().unwrap()),
+                            _ => triangle.2.position = array_to_vector3(value.as_vec().unwrap()),
+                        }
+                    }
+                }
+                _ => panic!("Malformated yaml test"),
+            };
+        }
+
+        Test { ray, triangle, hit }
     }
 
     #[test]
-    fn intersected() {
-        let template_vertex = Vertex::new(0., 0., 0., 0., 0., 0., 0., 0.);
-        let ray = Ray::new(Vector3::new(0., 0., 2.), Vector3::new(0., 0., -1.));
-        let triangle = Triangle(
-            Vertex {
-                position: Vector3::new(-1., -1., 0.),
-                ..template_vertex
-            },
-            Vertex {
-                position: Vector3::new(1., -1., 0.),
-                ..template_vertex
-            },
-            Vertex {
-                position: Vector3::new(-1., 1., 0.),
-                ..template_vertex
-            },
-        );
-        assert_eq!(triangle.intersect(&ray).unwrap().dist, 2.);
+    fn hit() {
+        let home = env::var("CARGO_MANIFEST_DIR").unwrap();
+        let mut home = PathBuf::from(home);
+        home.push("tests/moller_trumbore/hit_tests.yml");
+        let tests = &YamlLoader::load_from_str(
+            &fs::read_to_string(&home).expect("Something went wrong reading hit_tests.yml"),
+        )
+        .expect("Something went wrong parsing hit_tests.yml");
+        let tests = &tests[0].as_vec().unwrap();
+
+        for test in tests.iter() {
+            let test = convert_yaml(test);
+            let hit = test.triangle.intersect(&test.ray);
+            assert!(hit.is_some());
+            let hit = hit.unwrap();
+            let test_hit = test.hit.unwrap();
+            assert!((hit.dist - test_hit.dist).abs() < 0.00001);
+            assert!((hit.uv[0] - test_hit.u).abs() < 0.00001);
+            assert!((hit.uv[1] - test_hit.v).abs() < 0.00001);
+        }
     }
 
     #[test]
-    fn behind() {
-        let template_vertex = Vertex::new(0., 0., 0., 0., 0., 0., 0., 0.);
-        let ray = Ray::new(Vector3::new(0., 0., -2.), Vector3::new(0., 0., -1.));
-        let triangle = Triangle(
-            Vertex {
-                position: Vector3::new(-1., -1., 0.),
-                ..template_vertex
-            },
-            Vertex {
-                position: Vector3::new(1., -1., 0.),
-                ..template_vertex
-            },
-            Vertex {
-                position: Vector3::new(-1., 1., 0.),
-                ..template_vertex
-            },
-        );
-        assert!(triangle.intersect(&ray).is_none());
-    }
+    fn miss() {
+        let home = env::var("CARGO_MANIFEST_DIR").unwrap();
+        let mut home = PathBuf::from(home);
+        home.push("tests/moller_trumbore/miss_tests.yml");
+        let tests = &YamlLoader::load_from_str(
+            &fs::read_to_string(&home).expect("Something went wrong reading hit_tests.yml"),
+        )
+        .expect("Something went wrong parsing hit_tests.yml");
+        let tests = &tests[0].as_vec().unwrap();
 
-    #[test]
-    fn backface() {
-        let template_vertex = Vertex::new(0., 0., 0., 0., 0., 0., 0., 0.);
-        let ray = Ray::new(Vector3::new(0., 0., 2.), Vector3::new(0., 0., -1.));
-        let triangle = Triangle(
-            Vertex {
-                position: Vector3::new(-1., -1., 0.),
-                ..template_vertex
-            },
-            Vertex {
-                position: Vector3::new(-1., 1., 0.),
-                ..template_vertex
-            },
-            Vertex {
-                position: Vector3::new(1., -1., 0.),
-                ..template_vertex
-            },
-        );
-        assert_eq!(triangle.intersect(&ray), None);
+        for test in tests.iter() {
+            let test = convert_yaml(test);
+            let hit = test.triangle.intersect(&test.ray);
+            assert!(hit.is_none());
+        }
     }
 }
