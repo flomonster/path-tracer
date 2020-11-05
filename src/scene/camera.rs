@@ -21,7 +21,7 @@ pub struct Camera {
 impl Camera {
     pub fn new() -> Self {
         Camera {
-            position: Vector3::new(0., 0., 2.),
+            position: Vector3::new(0., 0., 11.),
             right: Vector3::new(1., 0., 0.),
             up: Vector3::new(0., 1., 0.),
             forward: Vector3::new(0., 0., -1.),

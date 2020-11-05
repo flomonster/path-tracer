@@ -11,3 +11,11 @@ pub struct Hit {
     /// Barycenter
     pub uv: Vector2<f32>,
 }
+
+impl Hit {
+    pub fn normal(&self) -> Vector3<f32> {
+        (1. - self.uv.x - self.uv.y) * self.triangle.0.normal
+            + self.uv.x * self.triangle.1.normal
+            + self.uv.y * self.triangle.2.normal
+    }
+}

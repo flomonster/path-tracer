@@ -8,6 +8,7 @@ use crate::scene::Light;
 use crate::utils::{Hit, Intersectable, Ray};
 use crate::Config;
 use rayon::ThreadPoolBuilder;
+use std::f32::consts;
 
 pub struct Raytracer {
     width: u32,
@@ -48,7 +49,7 @@ impl Raytracer {
                         let screen_y = screen_y * Rad::tan(scene.camera.fov / 2.);
 
                         // TODO: Take camera angle into acount
-                        let ray_dir = Vector3::new(screen_x, screen_y, -1.).normalize();
+                        let ray_dir = Vector3::new(screen_x, screen_y, -10.).normalize();
                         let ray = Ray::new(scene.camera.position, ray_dir);
 
                         // Compute pixel color
@@ -87,7 +88,7 @@ impl Raytracer {
             if let Some(hit) = model.intersect(ray) {
                 best = match best {
                     None => Some((hit, model)),
-                    Some((best, _)) if best.dist > hit.dist => Some((hit, model)),
+                    Some((best_hit, _)) if best_hit.dist > hit.dist => Some((hit, model)),
                     _ => best,
                 }
             }
@@ -97,9 +98,7 @@ impl Raytracer {
 
     fn compute_shader(scene: &Scene, model: &Model, hit: &Hit) -> Vector3<f32> {
         let mut color = Vector3::new(0., 0., 0.);
-        let hit_normal = (1. - hit.uv.x - hit.uv.y) * hit.triangle.0.normal
-            + hit.uv.x * hit.triangle.1.normal
-            + hit.uv.y * hit.triangle.2.normal;
+        let hit_normal = hit.normal();
 
         for light in scene.lights.iter() {
             match light {
@@ -111,7 +110,19 @@ impl Raytracer {
                         );
                     }
                 }
-                _ => unimplemented!("Point light compute shader"),
+                Light::Point(position, light_color, intensity) => {
+                    let mut dir = hit.position - position;
+                    let dist = dir.magnitude();
+                    dir = dir.normalize();
+                    let ray = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
+                    if Self::ray_cast(scene, &ray).is_none() {
+                        let light_dissipated = 4. * consts::PI * dist * dist; // 4πr^2
+                        color += model.material.diffuse.mul_element_wise(
+                            light_color * (*intensity) * hit_normal.dot(dir * -1.).max(0.)
+                                / light_dissipated,
+                        );
+                    }
+                }
             }
         }
         color

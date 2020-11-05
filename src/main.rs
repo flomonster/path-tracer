@@ -32,10 +32,18 @@ fn run() -> Result<(), Box<dyn Error>> {
     let mut scene = Scene::load(&config)?;
 
     // Add lights manually
+
+    /*
     scene.lights.push(scene::Light::Directional(
-        Vector3::new(-1., -1., -0.3), // Position
-        Vector3::new(1., 1., 1.),     // Direction
-        1.,                           // Intensity
+        Vector3::new(-0., -1., -1.), // Direction
+        Vector3::new(1., 1., 1.),    // Color
+        1.,                          // Intensity
+    ));*/
+
+    scene.lights.push(scene::Light::Point(
+        Vector3::new(0.2, 3., 3.), // Position
+        Vector3::new(1., 1., 1.),  // Color
+        500.,                      // Intensity
     ));
 
     // Send scene to Raytracer
