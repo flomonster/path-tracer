@@ -110,9 +110,11 @@ impl Raytracer {
                             // Diffuse
                             light_color * (*intensity) * hit_normal.dot(dir * -1.).max(0.),
                             // Specular
-                            (ray.direction * -1.)
-                                .dot(utils::reflection(&dir, &hit_normal))
-                                .powf(10.),
+                            intensity
+                                * (ray.direction * -1.)
+                                    .dot(utils::reflection(&dir, &hit_normal))
+                                    .max(0.)
+                                    .powf(10.),
                         ))
                     } else {
                         None
@@ -122,15 +124,19 @@ impl Raytracer {
                     let mut dir = hit.position - position;
                     let dist = dir.magnitude();
                     dir = dir.normalize();
-                    let ray = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
-                    if Self::ray_cast(scene, &ray).is_none() {
+                    let ray_shadow = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
+                    if Self::ray_cast(scene, &ray_shadow).is_none() {
                         let light_dissipated = 4. * consts::PI * dist * dist; // 4πr^2
                         Some((
                             // Diffuse
                             light_color * (*intensity) * hit_normal.dot(dir * -1.).max(0.)
                                 / light_dissipated,
                             // Specular
-                            0.,
+                            intensity / light_dissipated
+                                * (ray.direction * -1.)
+                                    .dot(utils::reflection(&dir, &hit_normal))
+                                    .max(0.)
+                                    .powf(10.),
                         ))
                     } else {
                         None
