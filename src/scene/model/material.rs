@@ -42,6 +42,9 @@ pub struct Material {
 
     /// Dissolve (alpha) map texture image for the material
     dissolve_texture: Option<GrayAlphaImage>,
+
+    /// Illumination properties of the object
+    illumination: Option<u8>,
 }
 
 impl Material {
@@ -60,6 +63,7 @@ impl Material {
             normal_texture: None,
             shininess_texture: None,
             dissolve_texture: None,
+            illumination: None,
         }
     }
 }
@@ -111,6 +115,7 @@ impl From<(&tobj::Material, &PathBuf)> for Material {
             normal_texture,
             shininess_texture,
             dissolve_texture,
+            illumination: mat.illumination_model,
         }
     }
 }

@@ -114,7 +114,7 @@ impl Raytracer {
                                 * (ray.direction * -1.)
                                     .dot(utils::reflection(&dir, &hit_normal))
                                     .max(0.)
-                                    .powf(10.),
+                                    .powf(model.material.shininess),
                         ))
                     } else {
                         None
@@ -136,7 +136,7 @@ impl Raytracer {
                                 * (ray.direction * -1.)
                                     .dot(utils::reflection(&dir, &hit_normal))
                                     .max(0.)
-                                    .powf(10.),
+                                    .powf(model.material.shininess),
                         ))
                     } else {
                         None
