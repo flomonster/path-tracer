@@ -5,6 +5,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::scene::model::Model;
 use crate::scene::Light;
+use crate::utils;
 use crate::utils::{Hit, Intersectable, Ray};
 use crate::Config;
 use rayon::ThreadPoolBuilder;
@@ -71,7 +72,7 @@ impl Raytracer {
     fn render_pixel(scene: &Scene, ray: &Ray) -> Rgb<u8> {
         let color = match Self::ray_cast(scene, ray) {
             None => Vector3::new(0., 0., 0.),
-            Some((hit, model)) => Self::compute_shader(scene, model, &hit),
+            Some((hit, model)) => Self::compute_shader(scene, model, ray, &hit),
         };
 
         // Convert Vector3 into Rgb
@@ -96,18 +97,25 @@ impl Raytracer {
         best
     }
 
-    fn compute_shader(scene: &Scene, model: &Model, hit: &Hit) -> Vector3<f32> {
+    fn compute_shader(scene: &Scene, model: &Model, ray: &Ray, hit: &Hit) -> Vector3<f32> {
         let mut color = Vector3::new(0., 0., 0.);
         let hit_normal = hit.normal();
 
         for light in scene.lights.iter() {
-            match light {
+            let shaders = match light {
                 Light::Directional(dir, light_color, intensity) => {
-                    let ray = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
-                    if Self::ray_cast(scene, &ray).is_none() {
-                        color += model.material.diffuse.mul_element_wise(
+                    let ray_shadow = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
+                    if Self::ray_cast(scene, &ray_shadow).is_none() {
+                        Some((
+                            // Diffuse
                             light_color * (*intensity) * hit_normal.dot(dir * -1.).max(0.),
-                        );
+                            // Specular
+                            (ray.direction * -1.)
+                                .dot(utils::reflection(&dir, &hit_normal))
+                                .powf(10.),
+                        ))
+                    } else {
+                        None
                     }
                 }
                 Light::Point(position, light_color, intensity) => {
@@ -117,12 +125,24 @@ impl Raytracer {
                     let ray = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
                     if Self::ray_cast(scene, &ray).is_none() {
                         let light_dissipated = 4. * consts::PI * dist * dist; // 4πr^2
-                        color += model.material.diffuse.mul_element_wise(
+                        Some((
+                            // Diffuse
                             light_color * (*intensity) * hit_normal.dot(dir * -1.).max(0.)
                                 / light_dissipated,
-                        );
+                            // Specular
+                            0.,
+                        ))
+                    } else {
+                        None
                     }
                 }
+            };
+
+            if let Some((diffuse, specular)) = shaders {
+                // Add diffuse
+                color += model.material.diffuse.mul_element_wise(diffuse);
+                // Add specular
+                color += specular * model.material.specular;
             }
         }
         color
