@@ -55,6 +55,12 @@ impl Raytracer {
 
                         // Compute pixel color
                         let color = Self::render_pixel(scene, &ray);
+                        // Convert Vector3 into Rgb
+                        let color = Rgb::from([
+                            (color.x * 255.) as u8,
+                            (color.y * 255.) as u8,
+                            (color.z * 255.) as u8,
+                        ]);
 
                         // Set pixel color into image
                         let mut image = image.lock().unwrap();
@@ -69,18 +75,11 @@ impl Raytracer {
     }
 
     /// Render the color of a pixel given a ray and the scene
-    fn render_pixel(scene: &Scene, ray: &Ray) -> Rgb<u8> {
-        let color = match Self::ray_cast(scene, ray) {
+    fn render_pixel(scene: &Scene, ray: &Ray) -> Vector3<f32> {
+        match Self::ray_cast(scene, ray) {
             None => Vector3::new(0., 0., 0.),
             Some((hit, model)) => Self::compute_shader(scene, model, ray, &hit),
-        };
-
-        // Convert Vector3 into Rgb
-        Rgb::from([
-            (color.x * 255.) as u8,
-            (color.y * 255.) as u8,
-            (color.z * 255.) as u8,
-        ])
+        }
     }
 
     fn ray_cast<'a>(scene: &'a Scene, ray: &Ray) -> Option<(Hit, &'a Model)> {
@@ -101,55 +100,65 @@ impl Raytracer {
         let mut color = Vector3::new(0., 0., 0.);
         let hit_normal = hit.normal();
 
-        for light in scene.lights.iter() {
-            let shaders = match light {
-                Light::Directional(dir, light_color, intensity) => {
-                    let ray_shadow = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
-                    if Self::ray_cast(scene, &ray_shadow).is_none() {
-                        Some((
-                            // Diffuse
-                            light_color * (*intensity) * hit_normal.dot(dir * -1.).max(0.),
-                            // Specular
-                            intensity
-                                * (ray.direction * -1.)
-                                    .dot(utils::reflection(&dir, &hit_normal))
-                                    .max(0.)
-                                    .powf(model.material.shininess),
-                        ))
-                    } else {
-                        None
-                    }
-                }
-                Light::Point(position, light_color, intensity) => {
-                    let mut dir = hit.position - position;
-                    let dist = dir.magnitude();
-                    dir = dir.normalize();
-                    let ray_shadow = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
-                    if Self::ray_cast(scene, &ray_shadow).is_none() {
-                        let light_dissipated = 4. * consts::PI * dist * dist; // 4πr^2
-                        Some((
-                            // Diffuse
-                            light_color * (*intensity) * hit_normal.dot(dir * -1.).max(0.)
-                                / light_dissipated,
-                            // Specular
-                            intensity / light_dissipated
-                                * (ray.direction * -1.)
-                                    .dot(utils::reflection(&dir, &hit_normal))
-                                    .max(0.)
-                                    .powf(model.material.shininess),
-                        ))
-                    } else {
-                        None
-                    }
-                }
-            };
+        let illum = model.material.illumination.unwrap_or(2);
 
-            if let Some((diffuse, specular)) = shaders {
-                // Add diffuse
-                color += model.material.diffuse.mul_element_wise(diffuse);
-                // Add specular
-                color += specular * model.material.specular;
+        if illum < 3 {
+            for light in scene.lights.iter() {
+                let shaders = match light {
+                    Light::Directional(dir, light_color, intensity) => {
+                        let ray_shadow = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
+                        if Self::ray_cast(scene, &ray_shadow).is_none() {
+                            Some((
+                                // Diffuse
+                                light_color * (*intensity) * hit_normal.dot(dir * -1.).max(0.),
+                                // Specular
+                                intensity
+                                    * (ray.direction * -1.)
+                                        .dot(utils::reflection(&dir, &hit_normal))
+                                        .max(0.)
+                                        .powf(model.material.shininess),
+                            ))
+                        } else {
+                            None
+                        }
+                    }
+                    Light::Point(position, light_color, intensity) => {
+                        let mut dir = hit.position - position;
+                        let dist = dir.magnitude();
+                        dir = dir.normalize();
+                        let ray_shadow = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
+                        if Self::ray_cast(scene, &ray_shadow).is_none() {
+                            let light_dissipated = 4. * consts::PI * dist * dist; // 4πr^2
+                            Some((
+                                // Diffuse
+                                light_color * (*intensity) * hit_normal.dot(dir * -1.).max(0.)
+                                    / light_dissipated,
+                                // Specular
+                                intensity / light_dissipated
+                                    * (ray.direction * -1.)
+                                        .dot(utils::reflection(&dir, &hit_normal))
+                                        .max(0.)
+                                        .powf(model.material.shininess),
+                            ))
+                        } else {
+                            None
+                        }
+                    }
+                };
+
+                if let Some((diffuse, specular)) = shaders {
+                    // Add diffuse
+                    color += model.material.diffuse.mul_element_wise(diffuse);
+                    // Add specular
+                    color += specular * model.material.specular;
+                }
             }
+        }
+        // Reflection
+        else {
+            let dir_reflected = utils::reflection(&ray.direction, &hit_normal);
+            let ray_reflected = Ray::new(hit.position + hit_normal * 0.0001, dir_reflected);
+            color += 0.8 * Self::render_pixel(scene, &ray_reflected);
         }
         color
     }

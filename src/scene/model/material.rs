@@ -44,7 +44,7 @@ pub struct Material {
     dissolve_texture: Option<GrayAlphaImage>,
 
     /// Illumination properties of the object
-    illumination: Option<u8>,
+    pub illumination: Option<u8>,
 }
 
 impl Material {
