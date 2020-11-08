@@ -102,64 +102,107 @@ impl Raytracer {
 
         let illum = model.material.illumination.unwrap_or(2);
 
-        if illum < 3 {
-            for light in scene.lights.iter() {
-                let shaders = match light {
-                    Light::Directional(dir, light_color, intensity) => {
-                        let ray_shadow = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
-                        if Self::ray_cast(scene, &ray_shadow).is_none() {
-                            Some((
-                                // Diffuse
-                                light_color * (*intensity) * hit_normal.dot(dir * -1.).max(0.),
-                                // Specular
-                                intensity
-                                    * (ray.direction * -1.)
-                                        .dot(utils::reflection(&dir, &hit_normal))
-                                        .max(0.)
-                                        .powf(model.material.shininess),
-                            ))
-                        } else {
-                            None
-                        }
-                    }
-                    Light::Point(position, light_color, intensity) => {
-                        let mut dir = hit.position - position;
-                        let dist = dir.magnitude();
-                        dir = dir.normalize();
-                        let ray_shadow = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
-                        if Self::ray_cast(scene, &ray_shadow).is_none() {
-                            let light_dissipated = 4. * consts::PI * dist * dist; // 4πr^2
-                            Some((
-                                // Diffuse
-                                light_color * (*intensity) * hit_normal.dot(dir * -1.).max(0.)
-                                    / light_dissipated,
-                                // Specular
-                                intensity / light_dissipated
-                                    * (ray.direction * -1.)
-                                        .dot(utils::reflection(&dir, &hit_normal))
-                                        .max(0.)
-                                        .powf(model.material.shininess),
-                            ))
-                        } else {
-                            None
-                        }
-                    }
-                };
-
-                if let Some((diffuse, specular)) = shaders {
-                    // Add diffuse
-                    color += model.material.diffuse.mul_element_wise(diffuse);
-                    // Add specular
-                    color += specular * model.material.specular;
+        for light in scene.lights.iter() {
+            let shaders = match light {
+                Light::Directional(dir, light_color, intensity) => {
+                    Self::compute_shaders_directional_light(
+                        scene,
+                        &hit_normal,
+                        hit,
+                        ray,
+                        model,
+                        dir,
+                        light_color,
+                        *intensity,
+                    )
                 }
+                Light::Point(position, light_color, intensity) => {
+                    Self::compute_shaders_point_light(
+                        scene,
+                        &hit_normal,
+                        hit,
+                        ray,
+                        model,
+                        position,
+                        light_color,
+                        *intensity,
+                    )
+                }
+            };
+
+            if let Some((diffuse, specular)) = shaders {
+                // Add diffuse
+                color += model.material.get_diffuse(hit).mul_element_wise(diffuse);
+                // Add specular
+                color += specular * model.material.get_specular(hit);
             }
         }
+
         // Reflection
-        else {
+        if illum == 2 {
             let dir_reflected = utils::reflection(&ray.direction, &hit_normal);
             let ray_reflected = Ray::new(hit.position + hit_normal * 0.0001, dir_reflected);
             color += 0.8 * Self::render_pixel(scene, &ray_reflected);
         }
+
         color
+    }
+
+    fn compute_shaders_point_light(
+        scene: &Scene,
+        hit_normal: &Vector3<f32>,
+        hit: &Hit,
+        ray: &Ray,
+        model: &Model,
+        position: &Vector3<f32>,
+        light_color: &Vector3<f32>,
+        intensity: f32,
+    ) -> Option<(Vector3<f32>, f32)> {
+        let mut dir = hit.position - position;
+        let dist = dir.magnitude();
+        dir = dir.normalize();
+        let ray_shadow = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
+        if Self::ray_cast(scene, &ray_shadow).is_none() {
+            let light_dissipated = 4. * consts::PI * dist * dist; // 4πr^2
+            Some((
+                // Diffuse
+                light_color * intensity * hit_normal.dot(dir * -1.).max(0.) / light_dissipated,
+                // Specular
+                intensity / light_dissipated
+                    * (ray.direction * -1.)
+                        .dot(utils::reflection(&dir, &hit_normal))
+                        .max(0.)
+                        .powf(model.material.get_shininess(hit)),
+            ))
+        } else {
+            None
+        }
+    }
+
+    fn compute_shaders_directional_light(
+        scene: &Scene,
+        hit_normal: &Vector3<f32>,
+        hit: &Hit,
+        ray: &Ray,
+        model: &Model,
+        dir: &Vector3<f32>,
+        light_color: &Vector3<f32>,
+        intensity: f32,
+    ) -> Option<(Vector3<f32>, f32)> {
+        let ray_shadow = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
+        if Self::ray_cast(scene, &ray_shadow).is_none() {
+            Some((
+                // Diffuse
+                light_color * intensity * hit_normal.dot(dir * -1.).max(0.),
+                // Specular
+                intensity
+                    * (ray.direction * -1.)
+                        .dot(utils::reflection(&dir, &hit_normal))
+                        .max(0.)
+                        .powf(model.material.get_shininess(hit)),
+            ))
+        } else {
+            None
+        }
     }
 }

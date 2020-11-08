@@ -27,7 +27,7 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn Error>> {
     let yaml = load_yaml!("cli.yaml");
-    let config: Config = Config::load(&App::from_yaml(yaml).get_matches())?;
+    let config = Config::load(&App::from_yaml(yaml).get_matches())?;
 
     let mut scene = Scene::load(&config)?;
 
@@ -39,12 +39,11 @@ fn run() -> Result<(), Box<dyn Error>> {
         1.,                          // Intensity
     ));
 
-    /*
     scene.lights.push(scene::Light::new_point(
-        Vector3::new(0.2, 3., 3.), // Position
-        Vector3::new(1., 1., 1.),  // Color
-        500.,                      // Intensity
-    ));*/
+        Vector3::new(2., 3., 2.), // Position
+        Vector3::new(1., 1., 1.), // Color
+        100.,                     // Intensity
+    ));
 
     // Send scene to Raytracer
     let raytracer = Raytracer::new(&config);

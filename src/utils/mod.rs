@@ -7,6 +7,7 @@ pub use ray::Ray;
 
 use cgmath::*;
 
-pub fn reflection(I: &Vector3<f32>, N: &Vector3<f32>) -> Vector3<f32> {
-    I - 2. * I.dot(N.clone()) * N
+/// Compute reflection vector given incident and normal vectors
+pub fn reflection(i: &Vector3<f32>, n: &Vector3<f32>) -> Vector3<f32> {
+    i - 2. * i.dot(n.clone()) * n
 }
