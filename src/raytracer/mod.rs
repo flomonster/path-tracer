@@ -54,7 +54,7 @@ impl Raytracer {
                         let ray = Ray::new(scene.camera.position, ray_dir);
 
                         // Compute pixel color
-                        let color = Self::render_pixel(scene, &ray);
+                        let color = Self::render_pixel(scene, &ray, 4);
                         // Convert Vector3 into Rgb
                         let color = Rgb::from([
                             (color.x * 255.) as u8,
@@ -75,10 +75,13 @@ impl Raytracer {
     }
 
     /// Render the color of a pixel given a ray and the scene
-    fn render_pixel(scene: &Scene, ray: &Ray) -> Vector3<f32> {
+    fn render_pixel(scene: &Scene, ray: &Ray, max_bounds: i32) -> Vector3<f32> {
+        if max_bounds < 0 {
+            return Vector3::new(0., 0., 0.);
+        }
         match Self::ray_cast(scene, ray) {
             None => Vector3::new(0., 0., 0.),
-            Some((hit, model)) => Self::compute_shader(scene, model, ray, &hit),
+            Some((hit, model)) => Self::compute_shader(scene, model, ray, &hit, max_bounds),
         }
     }
 
@@ -96,7 +99,13 @@ impl Raytracer {
         best
     }
 
-    fn compute_shader(scene: &Scene, model: &Model, ray: &Ray, hit: &Hit) -> Vector3<f32> {
+    fn compute_shader(
+        scene: &Scene,
+        model: &Model,
+        ray: &Ray,
+        hit: &Hit,
+        max_bounds: i32,
+    ) -> Vector3<f32> {
         let mut color = Vector3::new(0., 0., 0.);
         let hit_normal = hit.normal();
 
@@ -131,18 +140,23 @@ impl Raytracer {
             };
 
             if let Some((diffuse, specular)) = shaders {
-                // Add diffuse
-                color += model.material.get_diffuse(hit).mul_element_wise(diffuse);
+                if illum == 2 {
+                    // Add diffuse
+                    color += model.material.get_diffuse(hit).mul_element_wise(diffuse);
+                }
                 // Add specular
                 color += specular * model.material.get_specular(hit);
             }
         }
 
         // Reflection
-        if illum == 2 {
+        if illum == 3 {
             let dir_reflected = utils::reflection(&ray.direction, &hit_normal);
             let ray_reflected = Ray::new(hit.position + hit_normal * 0.0001, dir_reflected);
-            color += 0.8 * Self::render_pixel(scene, &ray_reflected);
+            color += model
+                .material
+                .get_diffuse(hit)
+                .mul_element_wise(Self::render_pixel(scene, &ray_reflected, max_bounds - 1));
         }
 
         color
