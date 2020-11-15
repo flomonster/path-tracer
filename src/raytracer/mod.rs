@@ -50,7 +50,7 @@ impl Raytracer {
                         let screen_y = screen_y * Rad::tan(scene.camera.fov / 2.);
 
                         // TODO: Take camera angle into acount
-                        let ray_dir = Vector3::new(screen_x, screen_y, -10.).normalize();
+                        let ray_dir = Vector3::new(screen_x, screen_y, -1.).normalize();
                         let ray = Ray::new(scene.camera.position, ray_dir);
 
                         // Compute pixel color

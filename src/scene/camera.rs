@@ -1,4 +1,3 @@
-use cgmath::Rad;
 use cgmath::*;
 
 pub struct Camera {
@@ -25,7 +24,7 @@ impl Camera {
             right: Vector3::new(1., 0., 0.),
             up: Vector3::new(0., 1., 0.),
             forward: Vector3::new(0., 0., -1.),
-            fov: Rad(90.0),
+            fov: Rad(0.399),
         }
     }
 }
