@@ -4,11 +4,10 @@ use image::{Rgb, RgbImage};
 use std::sync::{Arc, Mutex};
 
 use crate::scene::model::Model;
-use crate::scene::Light;
-use crate::utils;
 use crate::utils::{Hit, Intersectable, Ray};
 use crate::Config;
-use rayon::ThreadPoolBuilder;
+use easy_gltf::Light;
+//use rayon::ThreadPoolBuilder;
 use std::f32::consts;
 
 pub struct Raytracer {
@@ -36,39 +35,39 @@ impl Raytracer {
         let image_ratio = width / height;
 
         // Create thread pool
-        let pool = ThreadPoolBuilder::new().num_threads(8).build().unwrap();
+        // let pool = ThreadPoolBuilder::new().num_threads(8).build().unwrap();
 
-        pool.scope(|s| {
-            for x in 0..self.width {
-                for y in 0..self.height {
-                    let image = image.clone();
-                    s.spawn(move |_| {
-                        let screen_x = (x as f32 + 0.5) / width * 2. - 1.;
-                        let screen_x = screen_x * Rad::tan(scene.camera.fov / 2.) * image_ratio;
+        //      pool.scope(|s| {
+        for x in 0..self.width {
+            for y in 0..self.height {
+                let image = image.clone();
+                //                    s.spawn(move |_| {
+                let screen_x = (x as f32 + 0.5) / width * 2. - 1.;
+                let screen_x = screen_x * Rad::tan(scene.camera.fov / 2.) * image_ratio;
 
-                        let screen_y = 1. - (y as f32 + 0.5) / height * 2.;
-                        let screen_y = screen_y * Rad::tan(scene.camera.fov / 2.);
+                let screen_y = 1. - (y as f32 + 0.5) / height * 2.;
+                let screen_y = screen_y * Rad::tan(scene.camera.fov / 2.);
 
-                        // TODO: Take camera angle into acount
-                        let ray_dir = Vector3::new(screen_x, screen_y, -1.).normalize();
-                        let ray = Ray::new(scene.camera.position, ray_dir);
+                // TODO: Take camera angle into acount
+                let ray_dir = Vector3::new(screen_x, screen_y, -1.).normalize();
+                let ray = Ray::new(scene.camera.position, ray_dir);
 
-                        // Compute pixel color
-                        let color = Self::render_pixel(scene, &ray, 4);
-                        // Convert Vector3 into Rgb
-                        let color = Rgb::from([
-                            (color.x * 255.) as u8,
-                            (color.y * 255.) as u8,
-                            (color.z * 255.) as u8,
-                        ]);
+                // Compute pixel color
+                let color = Self::render_pixel(scene, &ray, 4);
+                // Convert Vector3 into Rgb
+                let color = Rgb::from([
+                    (color.x * 255.) as u8,
+                    (color.y * 255.) as u8,
+                    (color.z * 255.) as u8,
+                ]);
 
-                        // Set pixel color into image
-                        let mut image = image.lock().unwrap();
-                        image[(x, y)] = color;
-                    });
-                }
+                // Set pixel color into image
+                let mut image = image.lock().unwrap();
+                image[(x, y)] = color;
+                //                   });
             }
-        });
+        }
+        //     });
 
         // Unwrap image
         Arc::try_unwrap(image).unwrap().into_inner().unwrap()
@@ -104,52 +103,57 @@ impl Raytracer {
         model: &Model,
         ray: &Ray,
         hit: &Hit,
-        max_bounds: i32,
+        _max_bounds: i32,
     ) -> Vector3<f32> {
         let mut color = Vector3::new(0., 0., 0.);
         let hit_normal = hit.normal();
 
-        let illum = model.material.illumination.unwrap_or(2);
-
         for light in scene.lights.iter() {
             let shaders = match light {
-                Light::Directional(dir, light_color, intensity) => {
-                    Self::compute_shaders_directional_light(
-                        scene,
-                        &hit_normal,
-                        hit,
-                        ray,
-                        model,
-                        dir,
-                        light_color,
-                        *intensity,
-                    )
-                }
-                Light::Point(position, light_color, intensity) => {
-                    Self::compute_shaders_point_light(
-                        scene,
-                        &hit_normal,
-                        hit,
-                        ray,
-                        model,
-                        position,
-                        light_color,
-                        *intensity,
-                    )
-                }
+                Light::Directional {
+                    direction,
+                    color,
+                    intensity,
+                } => Self::compute_shaders_directional_light(
+                    scene,
+                    &hit_normal,
+                    hit,
+                    ray,
+                    model,
+                    direction,
+                    color,
+                    *intensity,
+                ),
+                Light::Point {
+                    position,
+                    color,
+                    intensity,
+                } => Self::compute_shaders_point_light(
+                    scene,
+                    &hit_normal,
+                    hit,
+                    ray,
+                    model,
+                    position,
+                    color,
+                    *intensity,
+                ),
+                _ => unimplemented!(),
             };
 
-            if let Some((diffuse, specular)) = shaders {
-                if illum == 2 {
-                    // Add diffuse
-                    color += model.material.get_diffuse(hit).mul_element_wise(diffuse);
-                }
+            if let Some((diffuse, _specular)) = shaders {
+                // Add diffuse
+                color += model
+                    .material
+                    .base_color_factor
+                    .truncate()
+                    .mul_element_wise(diffuse);
                 // Add specular
-                color += specular * model.material.get_specular(hit);
+                // color += specular * model.material.get_specular(hit);
             }
         }
 
-        // Reflection
+        /* Reflection
         if illum == 3 {
             let dir_reflected = utils::reflection(&ray.direction, &hit_normal);
             let ray_reflected = Ray::new(hit.position + hit_normal * 0.0001, dir_reflected);
@@ -157,7 +161,7 @@ impl Raytracer {
                 .material
                 .get_diffuse(hit)
                 .mul_element_wise(Self::render_pixel(scene, &ray_reflected, max_bounds - 1));
-        }
+        }*/
 
         color
     }
@@ -166,8 +170,8 @@ impl Raytracer {
         scene: &Scene,
         hit_normal: &Vector3<f32>,
         hit: &Hit,
-        ray: &Ray,
-        model: &Model,
+        _ray: &Ray,
+        _model: &Model,
         position: &Vector3<f32>,
         light_color: &Vector3<f32>,
         intensity: f32,
@@ -182,11 +186,11 @@ impl Raytracer {
                 // Diffuse
                 light_color * intensity * hit_normal.dot(dir * -1.).max(0.) / light_dissipated,
                 // Specular
-                intensity / light_dissipated
+                0., /*intensity / light_dissipated
                     * (ray.direction * -1.)
                         .dot(utils::reflection(&dir, &hit_normal))
                         .max(0.)
-                        .powf(model.material.get_shininess(hit)),
+                        .powf(model.material.get_shininess(hit))*/
             ))
         } else {
             None
@@ -197,8 +201,8 @@ impl Raytracer {
         scene: &Scene,
         hit_normal: &Vector3<f32>,
         hit: &Hit,
-        ray: &Ray,
-        model: &Model,
+        _ray: &Ray,
+        _model: &Model,
         dir: &Vector3<f32>,
         light_color: &Vector3<f32>,
         intensity: f32,
@@ -209,11 +213,12 @@ impl Raytracer {
                 // Diffuse
                 light_color * intensity * hit_normal.dot(dir * -1.).max(0.),
                 // Specular
-                intensity
-                    * (ray.direction * -1.)
-                        .dot(utils::reflection(&dir, &hit_normal))
-                        .max(0.)
-                        .powf(model.material.get_shininess(hit)),
+                0.,
+                /*intensity
+                * (ray.direction * -1.)
+                    .dot(utils::reflection(&dir, &hit_normal))
+                    .max(0.)
+                    .powf(model.material.get_shininess(hit)),*/
             ))
         } else {
             None

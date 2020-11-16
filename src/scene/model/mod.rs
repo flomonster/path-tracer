@@ -1,61 +1,15 @@
-mod material;
 mod triangle;
-mod vertex;
 
-pub use material::Material;
-pub use triangle::Triangle;
-pub use vertex::Vertex;
+use easy_gltf::model::Triangle;
+use easy_gltf::Material;
+use std::rc::Rc;
 
 use crate::utils::{Hit, Intersectable, Ray};
-use std::path::PathBuf;
 
+#[derive(Clone, Debug)]
 pub struct Model {
     pub triangles: Vec<Triangle>,
-    pub material: Material,
-}
-
-impl Model {
-    /// Create an empy model
-    pub fn new() -> Self {
-        Model {
-            triangles: vec![],
-            material: Material::new(),
-        }
-    }
-
-    /// Load a model from tobj Model and Material
-    /// Need base path of the .obj to retrieve textures
-    pub fn load(obj: &tobj::Model, materials: &Vec<tobj::Material>, path: &PathBuf) -> Self {
-        let obj = &obj.mesh;
-        let mut model = Model::new();
-
-        for i in (0..obj.indices.len()).step_by(3) {
-            let mut vertices: Vec<Vertex> = Vec::new();
-            for j in i..(i + 3) {
-                vertices.push(Vertex::new(
-                    obj.positions[obj.indices[j] as usize * 3],
-                    obj.positions[obj.indices[j] as usize * 3 + 1],
-                    obj.positions[obj.indices[j] as usize * 3 + 2],
-                    obj.normals[obj.indices[j] as usize * 3],
-                    obj.normals[obj.indices[j] as usize * 3 + 1],
-                    obj.normals[obj.indices[j] as usize * 3 + 2],
-                    obj.texcoords[obj.indices[j] as usize * 2],
-                    obj.texcoords[obj.indices[j] as usize * 2 + 1],
-                ))
-            }
-            model.triangles.push(Triangle(
-                vertices[0].clone(),
-                vertices[1].clone(),
-                vertices[2].clone(),
-            ));
-        }
-
-        if let Some(material_id) = obj.material_id {
-            model.material = Material::from((&materials[material_id], path));
-        }
-
-        model
-    }
+    pub material: Rc<Material>,
 }
 
 impl Intersectable for Model {
@@ -71,5 +25,17 @@ impl Intersectable for Model {
             }
         }
         best
+    }
+}
+
+impl From<&easy_gltf::Model> for Model {
+    fn from(eg_model: &easy_gltf::Model) -> Self {
+        let model = Model {
+            triangles: eg_model
+                .triangles()
+                .unwrap_or_else(|_| panic!("Model primitive isn't triangles")),
+            material: eg_model.material().clone(),
+        };
+        model
     }
 }

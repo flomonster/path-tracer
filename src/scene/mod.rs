@@ -1,14 +1,11 @@
-mod camera;
-mod light;
 pub mod model;
 
-pub use camera::Camera;
-pub use light::Light;
+use easy_gltf::{Camera, Light};
 
 use model::Model;
 use std::error::Error;
-use tobj;
 
+#[derive(Debug, Clone, Default)]
 pub struct Scene {
     pub models: Vec<Model>,
     pub camera: Camera,
@@ -16,27 +13,26 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn new() -> Self {
-        Scene {
-            models: vec![],
-            camera: Camera::new(),
-            lights: vec![],
-        }
-    }
-
     pub fn load(config: &crate::Config) -> Result<Scene, Box<dyn Error>> {
-        let (models, materials) = tobj::load_obj(&config.input, true)?;
+        let mut scene = Self::default();
+        let scenes = easy_gltf::load(&config.input)?;
 
-        // Get base path needed to retrieve texture materials
-        let mut path = config.input.clone();
-        path.pop();
+        if scenes.is_empty() {
+            // TODO: Return error instead
+            panic!("No scene found")
+        }
 
-        let mut scene = Scene::new();
+        for model in scenes[0].models.iter() {
+            scene.models.push(model.into());
+        }
 
-        models
-            .iter()
-            .for_each(|model| scene.models.push(Model::load(model, &materials, &path)));
+        if scenes[0].cameras.is_empty() {
+            // TODO: Return error instead
+            panic!("No camera found")
+        }
+        scene.camera = scenes[0].cameras[0].clone();
 
+        scene.lights = scenes[0].lights.clone();
         Ok(scene)
     }
 }
