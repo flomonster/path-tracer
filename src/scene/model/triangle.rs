@@ -1,9 +1,6 @@
-use super::Vertex;
 use crate::utils::{Hit, Intersectable, Ray};
 use cgmath::{InnerSpace, Vector2};
-
-#[derive(Clone, Debug, PartialEq)]
-pub struct Triangle(pub Vertex, pub Vertex, pub Vertex);
+use easy_gltf::model::Triangle;
 
 impl Intersectable for Triangle {
     fn intersect(&self, ray: &Ray) -> Option<Hit> {
@@ -11,8 +8,8 @@ impl Intersectable for Triangle {
         //  MOLLER TRUMBORE
         // -----------------
 
-        let v0v1 = self.1.position - self.0.position;
-        let v0v2 = self.2.position - self.0.position;
+        let v0v1 = self[1].position - self[0].position;
+        let v0v2 = self[2].position - self[0].position;
         let pvec = ray.direction.cross(v0v2);
         let det = v0v1.dot(pvec);
 
@@ -23,7 +20,7 @@ impl Intersectable for Triangle {
 
         let invdet = 1. / det;
 
-        let tvec = ray.origin - self.0.position;
+        let tvec = ray.origin - self[0].position;
         let u = tvec.dot(pvec) * invdet;
         if u < 0. || u > 1. {
             return None;

@@ -8,7 +8,6 @@ mod utils;
 
 pub use config::Config;
 
-use cgmath::*;
 use clap::App;
 use raytracer::Raytracer;
 use scene::Scene;
@@ -29,21 +28,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     let yaml = load_yaml!("cli.yaml");
     let config = Config::load(&App::from_yaml(yaml).get_matches())?;
 
-    let mut scene = Scene::load(&config)?;
-
-    // Add lights manually
-
-    scene.lights.push(scene::Light::new_directional(
-        Vector3::new(-0., -1., -1.), // Direction
-        Vector3::new(1., 1., 1.),    // Color
-        1.,                          // Intensity
-    ));
-
-    scene.lights.push(scene::Light::new_point(
-        Vector3::new(2., 3., 2.), // Position
-        Vector3::new(1., 1., 1.), // Color
-        100.,                     // Intensity
-    ));
+    let scene = Scene::load(&config)?;
 
     // Send scene to Raytracer
     let raytracer = Raytracer::new(&config);
