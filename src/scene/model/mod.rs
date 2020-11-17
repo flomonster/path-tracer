@@ -2,14 +2,14 @@ mod triangle;
 
 use easy_gltf::model::Triangle;
 use easy_gltf::Material;
-use std::rc::Rc;
+use std::sync::Arc;
 
 use crate::utils::{Hit, Intersectable, Ray};
 
 #[derive(Clone, Debug)]
 pub struct Model {
     pub triangles: Vec<Triangle>,
-    pub material: Rc<Material>,
+    pub material: Arc<Material>,
 }
 
 impl Intersectable for Model {
