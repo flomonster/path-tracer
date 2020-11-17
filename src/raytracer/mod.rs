@@ -7,7 +7,7 @@ use crate::scene::model::Model;
 use crate::utils::{Hit, Intersectable, Ray};
 use crate::Config;
 use easy_gltf::Light;
-//use rayon::ThreadPoolBuilder;
+use rayon::ThreadPoolBuilder;
 use std::f32::consts;
 
 pub struct Raytracer {
@@ -35,39 +35,39 @@ impl Raytracer {
         let image_ratio = width / height;
 
         // Create thread pool
-        // let pool = ThreadPoolBuilder::new().num_threads(8).build().unwrap();
+        let pool = ThreadPoolBuilder::new().num_threads(8).build().unwrap();
 
-        //      pool.scope(|s| {
-        for x in 0..self.width {
-            for y in 0..self.height {
-                let image = image.clone();
-                //                    s.spawn(move |_| {
-                let screen_x = (x as f32 + 0.5) / width * 2. - 1.;
-                let screen_x = screen_x * Rad::tan(scene.camera.fov / 2.) * image_ratio;
+        pool.scope(|s| {
+            for x in 0..self.width {
+                for y in 0..self.height {
+                    let image = image.clone();
+                    s.spawn(move |_| {
+                        let screen_x = (x as f32 + 0.5) / width * 2. - 1.;
+                        let screen_x = screen_x * Rad::tan(scene.camera.fov / 2.) * image_ratio;
 
-                let screen_y = 1. - (y as f32 + 0.5) / height * 2.;
-                let screen_y = screen_y * Rad::tan(scene.camera.fov / 2.);
+                        let screen_y = 1. - (y as f32 + 0.5) / height * 2.;
+                        let screen_y = screen_y * Rad::tan(scene.camera.fov / 2.);
 
-                // TODO: Take camera angle into acount
-                let ray_dir = Vector3::new(screen_x, screen_y, -1.).normalize();
-                let ray = Ray::new(scene.camera.position, ray_dir);
+                        // TODO: Take camera angle into acount
+                        let ray_dir = Vector3::new(screen_x, screen_y, -1.).normalize();
+                        let ray = Ray::new(scene.camera.position, ray_dir);
 
-                // Compute pixel color
-                let color = Self::render_pixel(scene, &ray, 4);
-                // Convert Vector3 into Rgb
-                let color = Rgb::from([
-                    (color.x * 255.) as u8,
-                    (color.y * 255.) as u8,
-                    (color.z * 255.) as u8,
-                ]);
+                        // Compute pixel color
+                        let color = Self::render_pixel(scene, &ray, 4);
+                        // Convert Vector3 into Rgb
+                        let color = Rgb::from([
+                            (color.x * 255.) as u8,
+                            (color.y * 255.) as u8,
+                            (color.z * 255.) as u8,
+                        ]);
 
-                // Set pixel color into image
-                let mut image = image.lock().unwrap();
-                image[(x, y)] = color;
-                //                   });
+                        // Set pixel color into image
+                        let mut image = image.lock().unwrap();
+                        image[(x, y)] = color;
+                    });
+                }
             }
-        }
-        //     });
+        });
 
         // Unwrap image
         Arc::try_unwrap(image).unwrap().into_inner().unwrap()
