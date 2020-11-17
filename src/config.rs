@@ -4,6 +4,7 @@ use std::error::Error;
 use std::fmt;
 use std::path::PathBuf;
 
+#[derive(Clone, Debug)]
 pub struct Config {
     pub input: PathBuf,
     pub output: PathBuf,
@@ -35,6 +36,16 @@ impl Config {
             output: args.value_of("OUTPUT").unwrap().into(),
             resolution,
         })
+    }
+}
+
+impl Default for Config {
+    fn default() -> Self {
+        Config {
+            resolution: Vector2::new(854, 480),
+            input: Default::default(),
+            output: Default::default(),
+        }
     }
 }
 
