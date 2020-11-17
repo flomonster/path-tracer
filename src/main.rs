@@ -38,3 +38,34 @@ fn run() -> Result<(), Box<dyn Error>> {
     rendered_image.save(config.output)?;
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::path::{Path, PathBuf};
+
+    fn test_scene<P>(path: P)
+    where
+        P: AsRef<Path>,
+    {
+        let mut config = Config::default();
+        config.input = PathBuf::from(path.as_ref());
+        let scene = Scene::load(&config).unwrap();
+        Raytracer::new(&config).render(&scene);
+    }
+
+    #[test]
+    fn cube() {
+        test_scene("tests/scenes/cube.glb");
+    }
+
+    #[test]
+    fn reflection() {
+        test_scene("tests/scenes/reflection.glb");
+    }
+
+    #[test]
+    fn head() {
+        test_scene("tests/scenes/head.glb");
+    }
+}
