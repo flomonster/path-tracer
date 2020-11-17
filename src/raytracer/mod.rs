@@ -1,6 +1,7 @@
 use crate::Scene;
 use cgmath::*;
 use image::{Rgb, RgbImage};
+use pbr::ProgressBar;
 use std::sync::{Arc, Mutex};
 
 use crate::scene::model::Model;
@@ -34,6 +35,11 @@ impl Raytracer {
 
         let image_ratio = width / height;
 
+        // Create progress bar
+        let mut pb = ProgressBar::new((self.width * self.height) as u64);
+        pb.message("Rendering: ");
+        let pb = Arc::new(Mutex::new(pb));
+
         // Create thread pool
         let pool = ThreadPoolBuilder::new().num_threads(8).build().unwrap();
 
@@ -41,6 +47,7 @@ impl Raytracer {
             for x in 0..self.width {
                 for y in 0..self.height {
                     let image = image.clone();
+                    let pb = pb.clone();
                     s.spawn(move |_| {
                         let screen_x = (x as f32 + 0.5) / width * 2. - 1.;
                         let screen_x = screen_x * Rad::tan(scene.camera.fov / 2.) * image_ratio;
@@ -62,8 +69,10 @@ impl Raytracer {
                         ]);
 
                         // Set pixel color into image
-                        let mut image = image.lock().unwrap();
-                        image[(x, y)] = color;
+                        image.lock().unwrap()[(x, y)] = color;
+
+                        // Update progressbar
+                        pb.lock().unwrap().inc();
                     });
                 }
             }

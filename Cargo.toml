@@ -9,7 +9,8 @@ edition = "2018"
 [dependencies]
 cgmath="0.17.0"
 clap = {version = "2.33.1", features = ["yaml"]}
+easy-gltf = { git = "https://github.com/flomonster/easy-gltf" }
 image="0.23.6"
+pbr = "1.0.3"
 rayon = "1.3.1"
 yaml-rust = "0.4.4"
-easy-gltf = { git = "https://github.com/flomonster/easy-gltf" }
