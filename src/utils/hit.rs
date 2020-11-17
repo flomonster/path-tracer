@@ -18,4 +18,10 @@ impl Hit {
             + self.uv.x * self.triangle[1].normal
             + self.uv.y * self.triangle[2].normal
     }
+
+    pub fn text_coords(&self) -> Vector2<f32> {
+        self.triangle[0].texture
+            + self.uv.x * (self.triangle[1].texture - self.triangle[0].texture)
+            + self.uv.y * (self.triangle[2].texture - self.triangle[0].texture)
+    }
 }

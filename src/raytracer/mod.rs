@@ -125,6 +125,7 @@ impl Raytracer {
     ) -> Vector3<f32> {
         let mut color = Vector3::new(0., 0., 0.);
         let hit_normal = hit.normal();
+        let text_coords = hit.text_coords();
 
         for light in scene.lights.iter() {
             let shaders = match light {
@@ -163,7 +164,7 @@ impl Raytracer {
                 // Add diffuse
                 color += model
                     .material
-                    .base_color_factor
+                    .get_base_color(text_coords)
                     .truncate()
                     .mul_element_wise(diffuse);
                 // Add specular
