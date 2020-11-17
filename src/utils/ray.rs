@@ -17,6 +17,15 @@ impl Ray {
     }
 }
 
+impl Default for Ray {
+    fn default() -> Self {
+        Ray {
+            origin: Vector3::zero(),
+            direction: Vector3::zero(),
+        }
+    }
+}
+
 pub trait Intersectable {
     fn intersect(&self, ray: &Ray) -> Option<Hit>;
 }
