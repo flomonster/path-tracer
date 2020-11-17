@@ -81,14 +81,9 @@ mod tests {
     }
 
     fn convert_yaml(yaml: &yaml::Yaml) -> Test {
-        let template_vertex = Vertex::new(0., 0., 0., 0., 0., 0., 0., 0.);
         let yaml = yaml.as_hash().unwrap();
-        let mut ray = Ray::new(Vector3::new(-0.2, 0., 2.), Vector3::new(0., 0., -1.));
-        let mut triangle = Triangle(
-            template_vertex.clone(),
-            template_vertex.clone(),
-            template_vertex.clone(),
-        );
+        let mut ray = Ray::default();
+        let mut triangle = Triangle::default();
         let mut hit = None;
 
         for (key, value) in yaml {
@@ -124,9 +119,13 @@ mod tests {
                     for (key, value) in value {
                         let key = key.as_str().unwrap();
                         match key {
-                            "v0" => triangle.0.position = array_to_vector3(value.as_vec().unwrap()),
-                            "v1" => triangle.1.position = array_to_vector3(value.as_vec().unwrap()),
-                            _ => triangle.2.position = array_to_vector3(value.as_vec().unwrap()),
+                            "v0" => {
+                                triangle[0].position = array_to_vector3(value.as_vec().unwrap())
+                            }
+                            "v1" => {
+                                triangle[1].position = array_to_vector3(value.as_vec().unwrap())
+                            }
+                            _ => triangle[2].position = array_to_vector3(value.as_vec().unwrap()),
                         }
                     }
                 }
