@@ -14,6 +14,7 @@ use std::f32::consts;
 pub struct Raytracer {
     width: u32,
     height: u32,
+    quiet: bool,
 }
 
 impl Raytracer {
@@ -22,6 +23,7 @@ impl Raytracer {
         Raytracer {
             width: config.resolution.x,
             height: config.resolution.y,
+            quiet: config.quiet,
         }
     }
 
@@ -35,9 +37,14 @@ impl Raytracer {
 
         let image_ratio = width / height;
 
-        // Create progress bar
-        let mut pb = ProgressBar::new((self.width * self.height) as u64);
-        pb.message("Rendering: ");
+        // Create progress bar (if quiet isn't activated)
+        let pb = if self.quiet {
+            None
+        } else {
+            let mut pb = ProgressBar::new((self.width * self.height) as u64);
+            pb.message("Rendering: ");
+            Some(pb)
+        };
         let pb = Arc::new(Mutex::new(pb));
 
         // Create thread pool
@@ -72,7 +79,9 @@ impl Raytracer {
                         image.lock().unwrap()[(x, y)] = color;
 
                         // Update progressbar
-                        pb.lock().unwrap().inc();
+                        if let Some(ref mut pb) = *pb.lock().unwrap() {
+                            pb.inc();
+                        }
                     });
                 }
             }

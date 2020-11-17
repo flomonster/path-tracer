@@ -9,6 +9,7 @@ pub struct Config {
     pub input: PathBuf,
     pub output: PathBuf,
     pub resolution: Vector2<u32>,
+    pub quiet: bool,
 }
 
 impl Config {
@@ -35,6 +36,7 @@ impl Config {
             input: args.value_of("INPUT").unwrap().into(),
             output: args.value_of("OUTPUT").unwrap().into(),
             resolution,
+            quiet: args.is_present("quiet"),
         })
     }
 }
@@ -45,6 +47,7 @@ impl Default for Config {
             resolution: Vector2::new(854, 480),
             input: Default::default(),
             output: Default::default(),
+            quiet: true,
         }
     }
 }

@@ -13,3 +13,7 @@ args:
         long: resolution
         default_value: "854x480"
         help: Set resolution of the computed image
+    - quiet:
+        long: quiet
+        short: q
+        help: No progress bar printed
