@@ -98,7 +98,7 @@ impl Raytracer {
         }
         match Self::ray_cast(scene, ray) {
             None => Vector3::new(0., 0., 0.),
-            Some((hit, model)) => Self::compute_shader(scene, model, ray, &hit, max_bounds),
+            Some((hit, model)) => Self::compute_shader(scene, model, &hit, max_bounds),
         }
     }
 
@@ -116,129 +116,68 @@ impl Raytracer {
         best
     }
 
-    fn compute_shader(
-        scene: &Scene,
-        model: &Model,
-        ray: &Ray,
-        hit: &Hit,
-        _max_bounds: i32,
-    ) -> Vector3<f32> {
-        let mut color = Vector3::new(0., 0., 0.);
-        let hit_normal = hit.normal();
-        let text_coords = hit.text_coords();
+    fn compute_shader(scene: &Scene, model: &Model, hit: &Hit, _max_bounds: i32) -> Vector3<f32> {
+        let mut global_diffuse = Vector3::new(0., 0., 0.);
 
         for light in scene.lights.iter() {
-            let shaders = match light {
+            let diffuse = match light {
                 Light::Directional {
                     direction,
                     color,
                     intensity,
-                } => Self::compute_shaders_directional_light(
-                    scene,
-                    &hit_normal,
-                    hit,
-                    ray,
-                    model,
-                    direction,
-                    color,
-                    *intensity,
-                ),
+                } => Self::directional_light_diffuse(scene, hit, direction, color, *intensity),
                 Light::Point {
                     position,
                     color,
                     intensity,
-                } => Self::compute_shaders_point_light(
-                    scene,
-                    &hit_normal,
-                    hit,
-                    ray,
-                    model,
-                    position,
-                    color,
-                    *intensity,
-                ),
+                } => Self::point_light_diffuse(scene, hit, position, color, *intensity),
                 _ => unimplemented!(),
             };
 
-            if let Some((diffuse, _specular)) = shaders {
-                // Add diffuse
-                color += model
-                    .material
-                    .get_base_color(text_coords)
-                    .truncate()
-                    .mul_element_wise(diffuse);
-                // Add specular
-                // color += specular * model.material.get_specular(hit);
+            if let Some(diffuse) = diffuse {
+                // Add diffuse to the global diffuse
+                global_diffuse += diffuse;
             }
         }
-
-        /* Reflection
-        if illum == 3 {
-            let dir_reflected = utils::reflection(&ray.direction, &hit_normal);
-            let ray_reflected = Ray::new(hit.position + hit_normal * 0.0001, dir_reflected);
-            color += model
-                .material
-                .get_diffuse(hit)
-                .mul_element_wise(Self::render_pixel(scene, &ray_reflected, max_bounds - 1));
-        }*/
-
-        color
+        global_diffuse.x = global_diffuse.x.min(1.);
+        global_diffuse.y = global_diffuse.y.min(1.);
+        global_diffuse.z = global_diffuse.z.min(1.);
+        model
+            .material
+            .get_base_color(hit.text_coords)
+            .truncate()
+            .mul_element_wise(global_diffuse)
     }
 
-    fn compute_shaders_point_light(
+    fn point_light_diffuse(
         scene: &Scene,
-        hit_normal: &Vector3<f32>,
         hit: &Hit,
-        _ray: &Ray,
-        _model: &Model,
         position: &Vector3<f32>,
         light_color: &Vector3<f32>,
         intensity: f32,
-    ) -> Option<(Vector3<f32>, f32)> {
+    ) -> Option<Vector3<f32>> {
         let mut dir = hit.position - position;
         let dist = dir.magnitude();
         dir = dir.normalize();
-        let ray_shadow = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
+        let ray_shadow = Ray::new(hit.position + hit.normal * 0.0001, dir * -1.);
         if Self::ray_cast(scene, &ray_shadow).is_none() {
             let light_dissipated = 4. * consts::PI * dist * dist; // 4πr^2
-            Some((
-                // Diffuse
-                light_color * intensity * hit_normal.dot(dir * -1.).max(0.) / light_dissipated,
-                // Specular
-                0., /*intensity / light_dissipated
-                    * (ray.direction * -1.)
-                        .dot(utils::reflection(&dir, &hit_normal))
-                        .max(0.)
-                        .powf(model.material.get_shininess(hit))*/
-            ))
+            Some(light_color * intensity * hit.normal.dot(dir * -1.).max(0.) / light_dissipated)
         } else {
             None
         }
     }
 
-    fn compute_shaders_directional_light(
+    fn directional_light_diffuse(
         scene: &Scene,
-        hit_normal: &Vector3<f32>,
         hit: &Hit,
-        _ray: &Ray,
-        _model: &Model,
         dir: &Vector3<f32>,
         light_color: &Vector3<f32>,
         intensity: f32,
-    ) -> Option<(Vector3<f32>, f32)> {
-        let ray_shadow = Ray::new(hit.position + hit_normal * 0.0001, dir * -1.);
+    ) -> Option<Vector3<f32>> {
+        let ray_shadow = Ray::new(hit.position + hit.normal * 0.0001, dir * -1.);
         if Self::ray_cast(scene, &ray_shadow).is_none() {
-            Some((
-                // Diffuse
-                light_color * intensity * hit_normal.dot(dir * -1.).max(0.),
-                // Specular
-                0.,
-                /*intensity
-                * (ray.direction * -1.)
-                    .dot(utils::reflection(&dir, &hit_normal))
-                    .max(0.)
-                    .powf(model.material.get_shininess(hit)),*/
-            ))
+            Some(light_color * intensity * hit.normal.dot(dir * -1.).max(0.))
         } else {
             None
         }

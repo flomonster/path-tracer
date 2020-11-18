@@ -39,12 +39,12 @@ impl Intersectable for Triangle {
             return None;
         }
 
-        Some(Hit {
+        Some(Hit::new(
+            (*self).clone(),
             dist,
-            triangle: (*self).clone(),
-            position: ray.origin + ray.direction * dist,
-            uv: Vector2::new(u, v),
-        })
+            ray.origin + ray.direction * dist,
+            &Vector2::new(u, v),
+        ))
     }
 }
 
@@ -84,6 +84,8 @@ mod tests {
         let yaml = yaml.as_hash().unwrap();
         let mut ray = Ray::default();
         let mut triangle = Triangle::default();
+        triangle[1].texture = Vector2::new(1., 0.);
+        triangle[2].texture = Vector2::new(0., 1.);
         let mut hit = None;
 
         for (key, value) in yaml {
@@ -154,8 +156,8 @@ mod tests {
             let hit = hit.unwrap();
             let test_hit = test.hit.unwrap();
             assert!((hit.dist - test_hit.dist).abs() < 0.00001);
-            assert!((hit.uv[0] - test_hit.u).abs() < 0.00001);
-            assert!((hit.uv[1] - test_hit.v).abs() < 0.00001);
+            assert!((hit.text_coords[0] - test_hit.u).abs() < 0.00001);
+            assert!((hit.text_coords[1] - test_hit.v).abs() < 0.00001);
         }
     }
 
