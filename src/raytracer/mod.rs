@@ -86,6 +86,9 @@ impl Raytracer {
                 }
             }
         });
+        if let Some(ref mut pb) = *pb.lock().unwrap() {
+            pb.finish_print("Done!");
+        }
 
         // Unwrap image
         Arc::try_unwrap(image).unwrap().into_inner().unwrap()
