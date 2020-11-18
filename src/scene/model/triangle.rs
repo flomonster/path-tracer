@@ -1,8 +1,8 @@
-use crate::utils::{Hit, Intersectable, Ray};
-use cgmath::{InnerSpace, Vector2};
+use crate::utils::{BoundingBox, Hit, Intersectable, Ray};
+use cgmath::*;
 use easy_gltf::model::Triangle;
 
-impl Intersectable for Triangle {
+impl Intersectable<Option<Hit>> for Triangle {
     fn intersect(&self, ray: &Ray) -> Option<Hit> {
         // -----------------
         //  MOLLER TRUMBORE
@@ -48,10 +48,35 @@ impl Intersectable for Triangle {
     }
 }
 
+impl BoundingBox for Triangle {
+    fn bounding_box(&self) -> (Vector3<f32>, Vector3<f32>) {
+        let mut bb = (self[0].position, self[0].position);
+        for v in self {
+            if bb.0.x > v.position.x {
+                bb.0.x = v.position.x;
+            } else if bb.1.x < v.position.x {
+                bb.1.x = v.position.x;
+            }
+
+            if bb.0.y > v.position.y {
+                bb.0.y = v.position.y;
+            } else if bb.1.y < v.position.y {
+                bb.1.y = v.position.y;
+            }
+
+            if bb.0.z > v.position.z {
+                bb.0.z = v.position.z;
+            } else if bb.1.z < v.position.z {
+                bb.1.z = v.position.z;
+            }
+        }
+        bb
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-    use cgmath::*;
     use std::env;
     use std::fs;
     use std::path::PathBuf;
@@ -167,15 +192,14 @@ mod tests {
         let mut home = PathBuf::from(home);
         home.push("tests/moller_trumbore/miss_tests.yml");
         let tests = &YamlLoader::load_from_str(
-            &fs::read_to_string(&home).expect("Something went wrong reading hit_tests.yml"),
+            &fs::read_to_string(&home).expect("Something went wrong reading miss_tests.yml"),
         )
-        .expect("Something went wrong parsing hit_tests.yml");
+        .expect("Something went wrong parsing miss_tests.yml");
         let tests = &tests[0].as_vec().unwrap();
 
         for test in tests.iter() {
             let test = convert_yaml(test);
-            let hit = test.triangle.intersect(&test.ray);
-            assert!(hit.is_none());
+            assert!(test.triangle.intersect(&test.ray).is_none());
         }
     }
 }
