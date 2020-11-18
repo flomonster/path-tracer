@@ -4,18 +4,18 @@ use easy_gltf::model::Triangle;
 use easy_gltf::Material;
 use std::sync::Arc;
 
-use crate::utils::{Hit, Intersectable, Ray};
+use crate::utils::{Hit, Intersectable, KDtree, Ray};
 
 #[derive(Clone, Debug)]
 pub struct Model {
-    pub triangles: Vec<Triangle>,
+    triangles: KDtree<Triangle>,
     pub material: Arc<Material>,
 }
 
-impl Intersectable for Model {
+impl Intersectable<Option<Hit>> for Model {
     fn intersect(&self, ray: &Ray) -> Option<Hit> {
         let mut best = None;
-        for t in self.triangles.iter() {
+        for t in self.triangles.intersect(ray).iter() {
             if let Some(hit) = t.intersect(ray) {
                 best = match best {
                     None => Some(hit),
@@ -30,12 +30,14 @@ impl Intersectable for Model {
 
 impl From<&easy_gltf::Model> for Model {
     fn from(eg_model: &easy_gltf::Model) -> Self {
-        let model = Model {
-            triangles: eg_model
+        let kdtree = KDtree::new(
+            eg_model
                 .triangles()
                 .unwrap_or_else(|_| panic!("Model primitive isn't triangles")),
+        );
+        Model {
+            triangles: kdtree,
             material: eg_model.material().clone(),
-        };
-        model
+        }
     }
 }
