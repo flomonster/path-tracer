@@ -9,7 +9,7 @@ pub struct Hit {
     pub position: Vector3<f32>,
 
     /// Barycenter
-    pub text_coords: Vector2<f32>,
+    pub tex_coords: Vector2<f32>,
     /// Normal vector of the triangle at the hit point
     pub normal: Vector3<f32>,
 }
@@ -19,15 +19,15 @@ impl Hit {
         let normal = (1. - uv.x - uv.y) * triangle[0].normal
             + uv.x * triangle[1].normal
             + uv.y * triangle[2].normal;
-        let text_coords = triangle[0].texture
-            + uv.x * (triangle[1].texture - triangle[0].texture)
-            + uv.y * (triangle[2].texture - triangle[0].texture);
+        let tex_coords = triangle[0].tex_coords
+            + uv.x * (triangle[1].tex_coords - triangle[0].tex_coords)
+            + uv.y * (triangle[2].tex_coords - triangle[0].tex_coords);
 
         Self {
             triangle,
             dist,
             position,
-            text_coords,
+            tex_coords,
             normal,
         }
     }

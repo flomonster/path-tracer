@@ -144,7 +144,7 @@ impl Raytracer {
         global_diffuse.z = global_diffuse.z.min(1.);
         model
             .material
-            .get_base_color(hit.text_coords)
+            .get_base_color(hit.tex_coords)
             .truncate()
             .mul_element_wise(global_diffuse)
     }
