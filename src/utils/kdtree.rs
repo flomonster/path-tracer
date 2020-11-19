@@ -1,4 +1,5 @@
 use crate::utils::*;
+use std::sync::Arc;
 
 #[derive(Clone, Debug)]
 pub struct KDtree<P>
@@ -35,12 +36,21 @@ where
                 space.1.z = bb.1.z;
             }
 
-            aabb_items.push((bb, i));
+            aabb_items.push((bb, Arc::new(i)));
         }
         KDtree {
             space,
             root: KDtreeNode::new(space, aabb_items, 100),
         }
+    }
+}
+
+impl<P> BoundingBox for KDtree<P>
+where
+    P: BoundingBox + Clone,
+{
+    fn bounding_box(&self) -> AABB {
+        self.space
     }
 }
 
@@ -51,7 +61,7 @@ where
 {
     Leaf {
         space: AABB,
-        items: Vec<P>,
+        items: Vec<Arc<P>>,
     },
     Node {
         left_space: AABB,
@@ -71,7 +81,7 @@ impl<P> KDtreeNode<P>
 where
     P: BoundingBox + Clone,
 {
-    fn find_plane(space: &AABB, _items: &Vec<(AABB, P)>, max_depth: usize) -> Plan {
+    fn find_plane(space: &AABB, _items: &Vec<(AABB, Arc<P>)>, max_depth: usize) -> Plan {
         match max_depth % 3 {
             0 => Plan::X((space.0.x + space.1.x) / 2.),
             1 => Plan::Y((space.0.y + space.1.y) / 2.),
@@ -105,7 +115,7 @@ where
             && (a.0.z < b.1.z && a.1.z > b.0.z)
     }
 
-    fn new(space: AABB, mut items: Vec<(AABB, P)>, max_depth: usize) -> Self {
+    fn new(space: AABB, mut items: Vec<(AABB, Arc<P>)>, max_depth: usize) -> Self {
         if items.len() <= 10 || max_depth == 0 {
             let mut res = vec![];
             while let Some(i) = items.pop() {
@@ -116,12 +126,12 @@ where
 
         let p = Self::find_plane(&space, &items, max_depth);
         let (left_space, right_space) = Self::split_space(&space, &p);
-        let left_items: Vec<(AABB, P)> = items
+        let left_items: Vec<(AABB, Arc<P>)> = items
             .iter()
             .filter(|item| Self::intersect(&left_space, &item.0))
             .cloned()
             .collect();
-        let right_items: Vec<(AABB, P)> = items
+        let right_items: Vec<(AABB, Arc<P>)> = items
             .iter()
             .filter(|item| Self::intersect(&right_space, &item.0))
             .cloned()
@@ -138,11 +148,11 @@ where
     }
 }
 
-impl<P> Intersectable<Vec<P>> for KDtree<P>
+impl<P> Intersectable<Vec<Arc<P>>> for KDtree<P>
 where
     P: BoundingBox + Clone,
 {
-    fn intersect(&self, ray: &Ray) -> Vec<P> {
+    fn intersect(&self, ray: &Ray) -> Vec<Arc<P>> {
         match &self.root {
             KDtreeNode::Leaf { space, items } => {
                 if space.intersect(ray) {
@@ -156,11 +166,11 @@ where
     }
 }
 
-impl<P> Intersectable<Vec<P>> for KDtreeNode<P>
+impl<P> Intersectable<Vec<Arc<P>>> for KDtreeNode<P>
 where
     P: BoundingBox + Clone,
 {
-    fn intersect(&self, ray: &Ray) -> Vec<P> {
+    fn intersect(&self, ray: &Ray) -> Vec<Arc<P>> {
         match self {
             Self::Leaf { items, .. } => items.clone(),
             Self::Node {
