@@ -11,16 +11,16 @@ use easy_gltf::Light;
 use rayon::ThreadPoolBuilder;
 use std::f32::consts;
 
-pub struct Raytracer {
+pub struct Renderer {
     width: u32,
     height: u32,
     quiet: bool,
 }
 
-impl Raytracer {
+impl Renderer {
     /// Create new raytracer given resolution
     pub fn new(config: &Config) -> Self {
-        Raytracer {
+        Renderer {
             width: config.resolution.x,
             height: config.resolution.y,
             quiet: config.quiet,
