@@ -2,14 +2,14 @@
 extern crate clap;
 
 mod config;
-mod raytracer;
+mod renderer;
 mod scene;
 mod utils;
 
 pub use config::Config;
 
 use clap::App;
-use raytracer::Raytracer;
+use renderer::Renderer;
 use scene::Scene;
 use std::error::Error;
 use std::process::exit;
@@ -30,8 +30,8 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     let scene = Scene::load(&config)?;
 
-    // Send scene to Raytracer
-    let raytracer = Raytracer::new(&config);
+    // Send scene to Renderer
+    let raytracer = Renderer::new(&config);
     let rendered_image = raytracer.render(&scene);
 
     // Save image
@@ -51,7 +51,7 @@ mod tests {
         let mut config = Config::default();
         config.input = PathBuf::from(path.as_ref());
         let scene = Scene::load(&config).unwrap();
-        Raytracer::new(&config).render(&scene);
+        Renderer::new(&config).render(&scene);
     }
 
     #[test]
