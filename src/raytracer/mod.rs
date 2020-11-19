@@ -105,9 +105,9 @@ impl Raytracer {
         }
     }
 
-    fn ray_cast<'a>(scene: &'a Scene, ray: &Ray) -> Option<(Hit, &'a Model)> {
+    fn ray_cast(scene: &Scene, ray: &Ray) -> Option<(Hit, Arc<Model>)> {
         let mut best = None;
-        for model in scene.models.iter() {
+        for model in scene.models.intersect(ray) {
             if let Some(hit) = model.intersect(ray) {
                 best = match best {
                     None => Some((hit, model)),
@@ -119,7 +119,12 @@ impl Raytracer {
         best
     }
 
-    fn compute_shader(scene: &Scene, model: &Model, hit: &Hit, _max_bounds: i32) -> Vector3<f32> {
+    fn compute_shader(
+        scene: &Scene,
+        model: Arc<Model>,
+        hit: &Hit,
+        _max_bounds: i32,
+    ) -> Vector3<f32> {
         let mut global_diffuse = Vector3::new(0., 0., 0.);
 
         for light in scene.lights.iter() {

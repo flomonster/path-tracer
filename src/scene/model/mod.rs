@@ -1,10 +1,9 @@
 mod triangle;
 
+use crate::utils::*;
 use easy_gltf::model::Triangle;
 use easy_gltf::Material;
 use std::sync::Arc;
-
-use crate::utils::{Hit, Intersectable, KDtree, Ray};
 
 #[derive(Clone, Debug)]
 pub struct Model {
@@ -25,6 +24,12 @@ impl Intersectable<Option<Hit>> for Model {
             }
         }
         best
+    }
+}
+
+impl BoundingBox for Model {
+    fn bounding_box(&self) -> AABB {
+        self.triangles.bounding_box()
     }
 }
 
