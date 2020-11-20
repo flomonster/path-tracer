@@ -9,7 +9,7 @@ use crate::utils::{Hit, Intersectable, Ray};
 use crate::Config;
 use easy_gltf::Light;
 use rayon::ThreadPoolBuilder;
-use std::f32::consts;
+use std::f32::consts::PI;
 
 pub struct Renderer {
     width: u32,
@@ -101,7 +101,7 @@ impl Renderer {
         }
         match Self::ray_cast(scene, ray) {
             None => Vector3::new(0., 0., 0.),
-            Some((hit, model)) => Self::compute_shader(scene, model, &hit, max_bounds),
+            Some((hit, model)) => Self::radiance(scene, model, &hit, ray, max_bounds),
         }
     }
 
@@ -119,75 +119,120 @@ impl Renderer {
         best
     }
 
-    fn compute_shader(
+    fn radiance(
         scene: &Scene,
         model: Arc<Model>,
         hit: &Hit,
+        ray_in: &Ray,
         _max_bounds: i32,
     ) -> Vector3<f32> {
-        let mut global_diffuse = Vector3::new(0., 0., 0.);
+        let mut radiance = Vector3::zero();
+
+        let metalness = model.material.get_metallic(hit.tex_coords);
+        let roughness = model.material.get_roughness(hit.tex_coords);
+        let albedo = model.material.get_base_color(hit.tex_coords).truncate();
+
+        let f0 = Vector3::new(0.4, 0.4, 0.4);
+        let f0 = f0 * (1. - metalness) + albedo * metalness;
 
         for light in scene.lights.iter() {
-            let diffuse = match light {
-                Light::Directional {
-                    direction,
-                    color,
-                    intensity,
-                } => Self::directional_light_diffuse(scene, hit, direction, color, *intensity),
-                Light::Point {
-                    position,
-                    color,
-                    intensity,
-                } => Self::point_light_diffuse(scene, hit, position, color, *intensity),
-                _ => unimplemented!(),
-            };
+            let (light_radiance, light_direction) = Self::get_light_info(light, hit);
+            let halfway = -1. * (ray_in.direction + light_direction).normalize();
 
-            if let Some(diffuse) = diffuse {
-                // Add diffuse to the global diffuse
-                global_diffuse += diffuse;
+            let d = Self::distribution_ggx(hit.normal, halfway, roughness);
+            let g = Self::geometry_smith(
+                hit.normal,
+                -1. * ray_in.direction,
+                -1. * light_direction,
+                roughness,
+            );
+            let f = Self::freshnel_schlick(halfway.dot(-1. * ray_in.direction).max(0.), f0);
+
+            // Specular
+            let specular = (d * f * g)
+                / (4.
+                    * (-1. * ray_in.direction).dot(hit.normal).max(0.)
+                    * (-1. * light_direction.dot(hit.normal)).max(0.))
+                .max(0.001);
+
+            // Diffuse
+            let kd = Vector3::new(1. - f.x, 1. - f.y, 1. - f.z) * (1. - metalness);
+            let diffuse = kd.mul_element_wise(albedo) / PI;
+
+            radiance += (diffuse + specular).mul_element_wise(light_radiance)
+                * hit.normal.dot(-1. * light_direction);
+        }
+        if let Some(ao) = model.material.get_occlusion(hit.tex_coords) {
+            radiance += 0.03 * ao * albedo;
+        }
+
+        // HDR
+        /*
+        radiance = radiance.div_element_wise(radiance + Vector3::new(1., 1., 1.));
+        radiance = Vector3::new(
+            radiance.x.powf(1. / 2.2),
+            radiance.y.powf(1. / 2.2),
+            radiance.z.powf(1. / 2.2),
+        );
+        */
+
+        radiance
+    }
+
+    fn freshnel_schlick(cos_theta: f32, f0: Vector3<f32>) -> Vector3<f32> {
+        f0 + (Vector3::new(1. - f0.x, 1. - f0.y, 1. - f0.z)) * (1. - cos_theta).powi(5)
+    }
+
+    fn geometry_schlick_ggx(n_dot_v: f32, k: f32) -> f32 {
+        let nom = n_dot_v;
+        let denom = n_dot_v * (1. - k) + k;
+
+        nom / denom
+    }
+
+    fn geometry_smith(n: Vector3<f32>, v: Vector3<f32>, l: Vector3<f32>, a: f32) -> f32 {
+        let k = (a + 1.).powi(2) / 8.;
+        let n_dot_v = n.dot(v).max(0.);
+        let n_dot_l = n.dot(l).max(0.);
+        let ggx1 = Self::geometry_schlick_ggx(n_dot_v, k);
+        let ggx2 = Self::geometry_schlick_ggx(n_dot_l, k);
+
+        return ggx1 * ggx2;
+    }
+
+    fn distribution_ggx(n: Vector3<f32>, h: Vector3<f32>, a: f32) -> f32 {
+        let a2 = a * a;
+        let n_dot_h = n.dot(h).max(0.); //max(dot(N, H), 0.0);
+        let n_dot_h_2 = n_dot_h * n_dot_h;
+
+        let nom = a2;
+        let mut denom = n_dot_h_2 * (a2 - 1.) + 1.;
+        denom = PI * denom * denom;
+
+        return nom / denom;
+    }
+
+    fn get_light_info(light: &Light, hit: &Hit) -> (Vector3<f32>, Vector3<f32>) {
+        match light {
+            Light::Directional {
+                direction,
+                color,
+                intensity,
+            } => (*intensity * color, direction.clone()),
+
+            Light::Point {
+                position,
+                color,
+                intensity,
+            } => {
+                let direction = hit.position - position;
+                let dist = direction.magnitude();
+                let direction = direction.normalize();
+                // let light_dissipated = 4. * PI * dist * dist; // 4πr^2
+                let light_dissipated = dist * dist; // r^2
+                (*intensity / light_dissipated * color, direction)
             }
-        }
-        global_diffuse.x = global_diffuse.x.min(1.);
-        global_diffuse.y = global_diffuse.y.min(1.);
-        global_diffuse.z = global_diffuse.z.min(1.);
-        model
-            .material
-            .get_base_color(hit.tex_coords)
-            .truncate()
-            .mul_element_wise(global_diffuse)
-    }
-
-    fn point_light_diffuse(
-        scene: &Scene,
-        hit: &Hit,
-        position: &Vector3<f32>,
-        light_color: &Vector3<f32>,
-        intensity: f32,
-    ) -> Option<Vector3<f32>> {
-        let mut dir = hit.position - position;
-        let dist = dir.magnitude();
-        dir = dir.normalize();
-        let ray_shadow = Ray::new(hit.position + hit.normal * 0.0001, dir * -1.);
-        if Self::ray_cast(scene, &ray_shadow).is_none() {
-            let light_dissipated = 4. * consts::PI * dist * dist; // 4πr^2
-            Some(light_color * intensity * hit.normal.dot(dir * -1.).max(0.) / light_dissipated)
-        } else {
-            None
-        }
-    }
-
-    fn directional_light_diffuse(
-        scene: &Scene,
-        hit: &Hit,
-        dir: &Vector3<f32>,
-        light_color: &Vector3<f32>,
-        intensity: f32,
-    ) -> Option<Vector3<f32>> {
-        let ray_shadow = Ray::new(hit.position + hit.normal * 0.0001, dir * -1.);
-        if Self::ray_cast(scene, &ray_shadow).is_none() {
-            Some(light_color * intensity * hit.normal.dot(dir * -1.).max(0.))
-        } else {
-            None
+            _ => unimplemented!("Light not implemented: {:?}", light),
         }
     }
 }
