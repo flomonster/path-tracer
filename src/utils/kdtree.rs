@@ -40,7 +40,7 @@ where
         }
         KDtree {
             space,
-            root: KDtreeNode::new(space, aabb_items, 100),
+            root: KDtreeNode::new(space, aabb_items),
         }
     }
 }
@@ -71,6 +71,7 @@ where
     },
 }
 
+#[derive(Clone)]
 enum Plan {
     X(f32),
     Y(f32),
@@ -81,12 +82,84 @@ impl<P> KDtreeNode<P>
 where
     P: BoundingBox + Clone,
 {
-    fn find_plane(space: &AABB, _items: &Vec<(AABB, Arc<P>)>, max_depth: usize) -> Plan {
-        match max_depth % 3 {
-            0 => Plan::X((space.0.x + space.1.x) / 2.),
-            1 => Plan::Y((space.0.y + space.1.y) / 2.),
-            _ => Plan::Z((space.0.z + space.1.z) / 2.),
+    /// Compute volume of a box
+    fn volume(v: &AABB) -> f32 {
+        ((v.0.x - v.1.x) * (v.0.y - v.1.y) * (v.0.z - v.1.z)).abs()
+    }
+
+    /// Compute cost of a split (Kt = 15 and Ki = 20)
+    fn cost(pl: f32, pr: f32, n_l: usize, n_r: usize) -> f32 {
+        // Decrease cost if it cuts empty space
+        let factor = if n_l == 0 || n_r == 0 { 0.8 } else { 1. };
+        factor * (15. + 20. * (pl * n_l as f32 + pr * n_r as f32))
+    }
+
+    /// Surface Area Heuristic (SAH)
+    fn sah(p: &Plan, v: &AABB, n_l: usize, n_r: usize) -> f32 {
+        let (v_l, v_r) = Self::split_space(v, p);
+        let vol_v = Self::volume(v);
+        let pl = Self::volume(&v_l) / vol_v;
+        let pr = Self::volume(&v_r) / vol_v;
+        Self::cost(pl, pr, n_l, n_r)
+    }
+
+    fn classify(
+        triangles: &Vec<(AABB, Arc<P>)>,
+        v_l: &AABB,
+        v_r: &AABB,
+    ) -> (Vec<(AABB, Arc<P>)>, Vec<(AABB, Arc<P>)>) {
+        let t_l: Vec<(AABB, Arc<P>)> = triangles
+            .iter()
+            .filter(|item| Self::intersect(v_l, &item.0))
+            .cloned()
+            .collect();
+        let t_r: Vec<(AABB, Arc<P>)> = triangles
+            .iter()
+            .filter(|item| Self::intersect(v_r, &item.0))
+            .cloned()
+            .collect();
+        (t_l, t_r)
+    }
+
+    fn perfect_splits(t: &AABB, v: &AABB) -> Vec<Plan> {
+        let mut res = vec![];
+        if t.0.x > v.0.x {
+            res.push(Plan::X(t.0.x));
         }
+        if t.0.y > v.0.y {
+            res.push(Plan::Y(t.0.y));
+        }
+        if t.0.z > v.0.z {
+            res.push(Plan::Z(t.0.z));
+        }
+        if t.1.x < v.1.x {
+            res.push(Plan::X(t.1.x));
+        }
+        if t.1.y < v.1.y {
+            res.push(Plan::Y(t.1.y));
+        }
+        if t.1.z < v.1.z {
+            res.push(Plan::Z(t.1.z));
+        }
+        res
+    }
+
+    /// Compute best plan and it's cost
+    fn partition(triangles: &Vec<(AABB, Arc<P>)>, v: &AABB) -> (f32, Plan) {
+        let mut best_cost = f32::INFINITY;
+        let mut best_plan = Plan::X(0.);
+        for t in triangles {
+            for p in Self::perfect_splits(&t.0, v).iter() {
+                let (v_l, v_r) = Self::split_space(v, p);
+                let (t_l, t_r) = Self::classify(triangles, &v_l, &v_r);
+                let cost = Self::sah(p, v, t_l.len(), t_r.len());
+                if cost < best_cost {
+                    best_cost = cost;
+                    best_plan = p.clone();
+                }
+            }
+        }
+        (best_cost, best_plan)
     }
 
     fn split_space(space: &AABB, plan: &Plan) -> (AABB, AABB) {
@@ -115,8 +188,12 @@ where
             && (a.0.z < b.1.z && a.1.z > b.0.z)
     }
 
-    fn new(space: AABB, mut items: Vec<(AABB, Arc<P>)>, max_depth: usize) -> Self {
-        if items.len() <= 10 || max_depth == 0 {
+    fn new(space: AABB, mut items: Vec<(AABB, Arc<P>)>) -> Self {
+        // Find best plan and his cost
+        let (cost, p) = Self::partition(&items, &space);
+
+        // If the cost of split is higher of cost of the current node then make a leaf
+        if cost > 20. * items.len() as f32 {
             let mut res = vec![];
             while let Some(i) = items.pop() {
                 res.push(i.1);
@@ -124,26 +201,15 @@ where
             return Self::Leaf { space, items: res };
         }
 
-        let p = Self::find_plane(&space, &items, max_depth);
-        let (left_space, right_space) = Self::split_space(&space, &p);
-        let left_items: Vec<(AABB, Arc<P>)> = items
-            .iter()
-            .filter(|item| Self::intersect(&left_space, &item.0))
-            .cloned()
-            .collect();
-        let right_items: Vec<(AABB, Arc<P>)> = items
-            .iter()
-            .filter(|item| Self::intersect(&right_space, &item.0))
-            .cloned()
-            .collect();
-        if max_depth > 2 && (left_items.len() == items.len() || right_items.len() == items.len()) {
-            return Self::new(space, items, 2);
-        }
+        // Otherwise make a node
+        let (v_l, v_r) = Self::split_space(&space, &p);
+        let (t_l, t_r) = Self::classify(&items, &v_l, &v_r);
+
         Self::Node {
-            left_space,
-            right_space,
-            left_node: Box::new(Self::new(left_space, left_items, max_depth - 1)),
-            right_node: Box::new(Self::new(right_space, right_items, max_depth - 1)),
+            left_space: v_l,
+            right_space: v_r,
+            left_node: Box::new(Self::new(v_l, t_l)),
+            right_node: Box::new(Self::new(v_r, t_r)),
         }
     }
 }
