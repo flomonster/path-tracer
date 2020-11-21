@@ -1,5 +1,7 @@
 use crate::utils::*;
+use std::cmp::Ordering;
 use std::sync::Arc;
+use std::time::Instant;
 
 #[derive(Clone, Debug)]
 pub struct KDtree<P>
@@ -15,6 +17,7 @@ where
     P: BoundingBox + Clone,
 {
     pub fn new(mut items: Vec<P>) -> Self {
+        let now = Instant::now();
         let mut space = (Vector3::max_value(), Vector3::min_value());
         let mut aabb_items = vec![];
         while let Some(i) = items.pop() {
@@ -38,10 +41,9 @@ where
 
             aabb_items.push((bb, Arc::new(i)));
         }
-        KDtree {
-            space,
-            root: KDtreeNode::new(space, aabb_items),
-        }
+        let root = KDtreeNode::new(space, aabb_items);
+        println!("Time build kdtree: {}ms", now.elapsed().as_millis());
+        KDtree { space, root }
     }
 }
 
@@ -71,11 +73,45 @@ where
     },
 }
 
-#[derive(Clone)]
+#[derive(Clone, Debug)]
 enum Plan {
     X(f32),
     Y(f32),
     Z(f32),
+}
+
+impl Eq for Plan {}
+
+impl Ord for Plan {
+    fn cmp(&self, other: &Self) -> Ordering {
+        let v = match self {
+            Plan::X(v) => v,
+            Plan::Y(v) => v,
+            Plan::Z(v) => v,
+        };
+        let v_other = match other {
+            Plan::X(v) => v,
+            Plan::Y(v) => v,
+            Plan::Z(v) => v,
+        };
+        if v < v_other {
+            Ordering::Less
+        } else {
+            Ordering::Greater
+        }
+    }
+}
+
+impl PartialEq for Plan {
+    fn eq(&self, _other: &Self) -> bool {
+        false
+    }
+}
+
+impl PartialOrd for Plan {
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 
 impl<P> KDtreeNode<P>
@@ -97,9 +133,13 @@ where
     /// Surface Area Heuristic (SAH)
     fn sah(p: &Plan, v: &AABB, n_l: usize, n_r: usize) -> f32 {
         let (v_l, v_r) = Self::split_space(v, p);
+        let (vol_l, vol_r) = (Self::volume(&v_l), Self::volume(&v_r));
         let vol_v = Self::volume(v);
-        let pl = Self::volume(&v_l) / vol_v;
-        let pr = Self::volume(&v_r) / vol_v;
+        if vol_v == 0. || vol_l == 0. || vol_r == 0. {
+            return f32::INFINITY;
+        }
+        let pl = vol_l / vol_v;
+        let pr = vol_r / vol_v;
         Self::cost(pl, pr, n_l, n_r)
     }
 
@@ -121,25 +161,22 @@ where
         (t_l, t_r)
     }
 
-    fn perfect_splits(t: &AABB, v: &AABB) -> Vec<Plan> {
+    fn perfect_splits(t: &AABB, v: &AABB, dim: usize) -> Vec<(Plan, bool)> {
         let mut res = vec![];
-        if t.0.x > v.0.x {
-            res.push(Plan::X(t.0.x));
-        }
-        if t.0.y > v.0.y {
-            res.push(Plan::Y(t.0.y));
-        }
-        if t.0.z > v.0.z {
-            res.push(Plan::Z(t.0.z));
-        }
-        if t.1.x < v.1.x {
-            res.push(Plan::X(t.1.x));
-        }
-        if t.1.y < v.1.y {
-            res.push(Plan::Y(t.1.y));
-        }
-        if t.1.z < v.1.z {
-            res.push(Plan::Z(t.1.z));
+        match dim {
+            0 => {
+                res.push((Plan::X(t.0.x.max(v.0.x)), true));
+                res.push((Plan::X(t.1.x.min(v.1.x)), false));
+            }
+            1 => {
+                res.push((Plan::Y(t.0.y.max(v.0.y)), true));
+                res.push((Plan::Y(t.1.y.min(v.1.y)), false));
+            }
+            2 => {
+                res.push((Plan::Z(t.0.z.max(v.0.z)), true));
+                res.push((Plan::Z(t.1.z.min(v.1.z)), false));
+            }
+            _ => panic!("Invalid dimension number received: ({})", dim),
         }
         res
     }
@@ -148,6 +185,47 @@ where
     fn partition(triangles: &Vec<(AABB, Arc<P>)>, v: &AABB) -> (f32, Plan) {
         let mut best_cost = f32::INFINITY;
         let mut best_plan = Plan::X(0.);
+        for dim in 0..3 {
+            let mut event_list = vec![];
+            for t in triangles {
+                event_list.append(&mut Self::perfect_splits(&t.0, v, dim));
+            }
+            event_list.sort_by(|a, b| a.0.cmp(&b.0));
+            let mut n_l = 0;
+            let mut n_r = triangles.len();
+            let mut i = 0;
+            while i < event_list.len() {
+                let p = &event_list[i];
+                let mut p_true = 0;
+                let mut p_false = 0;
+                // Plan p is type true (+)
+                if p.1 {
+                    while i < event_list.len() && event_list[i].1 {
+                        i += 1;
+                        p_true += 1;
+                    }
+                }
+                // Plan p is type false (-)
+                else {
+                    while i < event_list.len() && !event_list[i].1 {
+                        i += 1;
+                        p_false += 1;
+                    }
+                }
+                n_r -= p_false;
+                // let (v_l, v_r) = Self::split_space(v, &p.0);
+                // let (t_l, t_r) = Self::classify(triangles, &v_l, &v_r);
+                // assert_eq!(n_l, t_l.len());
+                // assert_eq!(n_r, t_r.len());
+                let cost = Self::sah(&p.0, v, n_l, n_r);
+                n_l += p_true;
+                if cost < best_cost {
+                    best_cost = cost;
+                    best_plan = p.0.clone();
+                }
+            }
+        }
+        /*
         for t in triangles {
             for p in Self::perfect_splits(&t.0, v).iter() {
                 let (v_l, v_r) = Self::split_space(v, p);
@@ -158,7 +236,7 @@ where
                     best_plan = p.clone();
                 }
             }
-        }
+        }*/
         (best_cost, best_plan)
     }
 
@@ -167,16 +245,16 @@ where
         let mut right = space.clone();
         match plan {
             Plan::X(x) => {
-                left.0.x = *x;
-                right.1.x = *x
+                left.1.x = *x;
+                right.0.x = *x
             }
             Plan::Y(y) => {
-                left.0.y = *y;
-                right.1.y = *y
+                left.1.y = *y;
+                right.0.y = *y
             }
             Plan::Z(z) => {
-                left.0.z = *z;
-                right.1.z = *z;
+                left.1.z = *z;
+                right.0.z = *z;
             }
         }
         (left, right)

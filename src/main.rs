@@ -13,6 +13,7 @@ use renderer::Renderer;
 use scene::Scene;
 use std::error::Error;
 use std::process::exit;
+use std::time::Instant;
 
 fn main() {
     match run() {
@@ -32,7 +33,9 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     // Send scene to Renderer
     let renderer = Renderer::new(&config);
+    let now = Instant::now();
     let rendered_image = renderer.render(&scene);
+    println!("Render time: {}ms", now.elapsed().as_millis());
 
     // Save image
     rendered_image.save(config.output)?;
