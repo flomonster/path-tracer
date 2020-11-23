@@ -132,7 +132,7 @@ impl Renderer {
         let roughness = model.material.get_roughness(hit.tex_coords);
         let albedo = model.material.get_base_color(hit.tex_coords).truncate();
 
-        let f0 = Vector3::new(0.4, 0.4, 0.4);
+        let f0 = Vector3::new(0.04, 0.04, 0.04);
         let f0 = f0 * (1. - metalness) + albedo * metalness;
 
         for light in scene.lights.iter() {
@@ -146,7 +146,7 @@ impl Renderer {
                 -1. * light_direction,
                 roughness,
             );
-            let f = Self::freshnel_schlick(halfway.dot(-1. * ray_in.direction).max(0.), f0);
+            let f = Self::fresnel_schlick(halfway.dot(-1. * ray_in.direction).max(0.).min(1.), f0);
 
             // Specular
             let specular = (d * f * g)
@@ -162,32 +162,31 @@ impl Renderer {
             radiance += (diffuse + specular).mul_element_wise(light_radiance)
                 * hit.normal.dot(-1. * light_direction);
         }
+
         if let Some(ao) = model.material.get_occlusion(hit.tex_coords) {
             radiance += 0.03 * ao * albedo;
         }
 
         // HDR
-        /*
         radiance = radiance.div_element_wise(radiance + Vector3::new(1., 1., 1.));
         radiance = Vector3::new(
             radiance.x.powf(1. / 2.2),
             radiance.y.powf(1. / 2.2),
             radiance.z.powf(1. / 2.2),
         );
-        */
 
         radiance
     }
 
-    fn freshnel_schlick(cos_theta: f32, f0: Vector3<f32>) -> Vector3<f32> {
+    fn fresnel_schlick(cos_theta: f32, f0: Vector3<f32>) -> Vector3<f32> {
         f0 + (Vector3::new(1. - f0.x, 1. - f0.y, 1. - f0.z)) * (1. - cos_theta).powi(5)
     }
 
     fn geometry_schlick_ggx(n_dot_v: f32, k: f32) -> f32 {
-        let nom = n_dot_v;
+        let num = n_dot_v;
         let denom = n_dot_v * (1. - k) + k;
 
-        nom / denom
+        num / denom
     }
 
     fn geometry_smith(n: Vector3<f32>, v: Vector3<f32>, l: Vector3<f32>, a: f32) -> f32 {
@@ -201,15 +200,15 @@ impl Renderer {
     }
 
     fn distribution_ggx(n: Vector3<f32>, h: Vector3<f32>, a: f32) -> f32 {
-        let a2 = a * a;
+        let a2 = a.powi(4);
         let n_dot_h = n.dot(h).max(0.); //max(dot(N, H), 0.0);
         let n_dot_h_2 = n_dot_h * n_dot_h;
 
-        let nom = a2;
+        let num = a2;
         let mut denom = n_dot_h_2 * (a2 - 1.) + 1.;
         denom = PI * denom * denom;
 
-        return nom / denom;
+        return num / denom;
     }
 
     fn get_light_info(light: &Light, hit: &Hit) -> (Vector3<f32>, Vector3<f32>) {
@@ -218,7 +217,7 @@ impl Renderer {
                 direction,
                 color,
                 intensity,
-            } => (*intensity * color, direction.clone()),
+            } => (*color, direction.clone()),
 
             Light::Point {
                 position,
@@ -230,7 +229,7 @@ impl Renderer {
                 let direction = direction.normalize();
                 // let light_dissipated = 4. * PI * dist * dist; // 4πr^2
                 let light_dissipated = dist * dist; // r^2
-                (*intensity / light_dissipated * color, direction)
+                (1. / light_dissipated * color, direction)
             }
             _ => unimplemented!("Light not implemented: {:?}", light),
         }

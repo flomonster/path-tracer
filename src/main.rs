@@ -31,8 +31,8 @@ fn run() -> Result<(), Box<dyn Error>> {
     let scene = Scene::load(&config)?;
 
     // Send scene to Renderer
-    let raytracer = Renderer::new(&config);
-    let rendered_image = raytracer.render(&scene);
+    let renderer = Renderer::new(&config);
+    let rendered_image = renderer.render(&scene);
 
     // Save image
     rendered_image.save(config.output)?;
