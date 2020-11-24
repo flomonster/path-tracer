@@ -1,7 +1,7 @@
 use crate::utils::*;
 use std::cmp::Ordering;
+use std::collections::HashSet;
 use std::sync::Arc;
-use std::time::Instant;
 
 #[derive(Clone, Debug)]
 pub struct KDtree<P>
@@ -12,39 +12,65 @@ where
     space: AABB,
 }
 
+type Items<P> = Vec<Item<P>>;
+
+#[derive(Clone, Debug)]
+struct Item<P>
+where
+    P: BoundingBox + Clone,
+{
+    pub value: Arc<P>,
+    pub bb: AABB,
+    pub id: usize,
+}
+
+impl<P> Item<P>
+where
+    P: BoundingBox + Clone,
+{
+    fn new(value: P, id: usize) -> Self {
+        let bb = value.bounding_box();
+        Item {
+            value: Arc::new(value),
+            bb,
+            id,
+        }
+    }
+}
+
 impl<P> KDtree<P>
 where
     P: BoundingBox + Clone,
 {
-    pub fn new(mut items: Vec<P>) -> Self {
-        let now = Instant::now();
+    pub fn new(mut values: Vec<P>) -> Self {
         let mut space = (Vector3::max_value(), Vector3::min_value());
-        let mut aabb_items = vec![];
-        while let Some(i) = items.pop() {
-            let bb = i.bounding_box();
+        let mut items = Items::new();
+        let mut id = 0;
+        while let Some(v) = values.pop() {
+            let item = Item::new(v, id);
+            id += 1;
 
-            if bb.0.x < space.0.x {
-                space.0.x = bb.0.x;
+            if item.bb.0.x < space.0.x {
+                space.0.x = item.bb.0.x;
             }
-            if bb.1.x > space.1.x {
-                space.1.x = bb.1.x;
+            if item.bb.1.x > space.1.x {
+                space.1.x = item.bb.1.x;
             }
-            if bb.0.y < space.0.y {
-                space.0.y = bb.0.y;
+            if item.bb.0.y < space.0.y {
+                space.0.y = item.bb.0.y;
             }
-            if bb.1.y > space.1.y {
-                space.1.y = bb.1.y;
+            if item.bb.1.y > space.1.y {
+                space.1.y = item.bb.1.y;
             }
-            if bb.0.z < space.0.z {
-                space.0.z = bb.0.z;
+            if item.bb.0.z < space.0.z {
+                space.0.z = item.bb.0.z;
             }
-            if bb.1.z > space.1.z {
-                space.1.z = bb.1.z;
+            if item.bb.1.z > space.1.z {
+                space.1.z = item.bb.1.z;
             }
-            aabb_items.push((bb, Arc::new(i)));
+            items.push(item);
         }
-        let root = KDtreeNode::new(space, aabb_items);
-        println!("Time build kdtree: {}ms", now.elapsed().as_millis());
+        let root = KDtreeNode::new(space, items);
         KDtree { space, root }
     }
 }
@@ -146,37 +172,49 @@ where
     }
 
     fn classify(
-        triangles: &Vec<(AABB, Arc<P>)>,
-        v_l: &AABB,
-        v_r: &AABB,
-    ) -> (Vec<(AABB, Arc<P>)>, Vec<(AABB, Arc<P>)>) {
-        let t_l: Vec<(AABB, Arc<P>)> = triangles
-            .iter()
-            .filter(|item| Self::intersect(v_l, &item.0))
-            .cloned()
-            .collect();
-        let t_r: Vec<(AABB, Arc<P>)> = triangles
-            .iter()
-            .filter(|item| Self::intersect(v_r, &item.0))
-            .cloned()
-            .collect();
-        (t_l, t_r)
+        event_list: &Vec<(Plan, bool, Item<P>)>,
+        best_event: usize,
+    ) -> (Items<P>, Items<P>) {
+        let mut left_items = vec![];
+        let mut right_items = vec![];
+        let mut start_left = HashSet::new();
+        for i in 0..best_event {
+            if !event_list[i].1 {
+                left_items.push(event_list[i].2.clone());
+            } else {
+                start_left.insert(event_list[i].2.id);
+            }
+        }
+        for i in (1 + best_event)..event_list.len() {
+            if event_list[i].1 {
+                right_items.push(event_list[i].2.clone());
+            } else if start_left.contains(&event_list[i].2.id) {
+                left_items.push(event_list[i].2.clone());
+                right_items.push(event_list[i].2.clone());
+            }
+        }
+        if event_list[best_event].1 {
+            right_items.push(event_list[best_event].2.clone());
+        } else {
+            left_items.push(event_list[best_event].2.clone());
+        }
+        (left_items, right_items)
     }
 
-    fn perfect_splits(t: &AABB, v: &AABB, dim: usize) -> Vec<(Plan, bool)> {
+    fn perfect_splits(item: &Item<P>, v: &AABB, dim: usize) -> Vec<(Plan, bool, Item<P>)> {
         let mut res = vec![];
         match dim {
             0 => {
-                res.push((Plan::X(t.0.x.max(v.0.x)), true));
-                res.push((Plan::X(t.1.x.min(v.1.x)), false));
+                res.push((Plan::X(item.bb.0.x.max(v.0.x)), true, item.clone()));
+                res.push((Plan::X(item.bb.1.x.min(v.1.x)), false, item.clone()));
             }
             1 => {
-                res.push((Plan::Y(t.0.y.max(v.0.y)), true));
-                res.push((Plan::Y(t.1.y.min(v.1.y)), false));
+                res.push((Plan::Y(item.bb.0.y.max(v.0.y)), true, item.clone()));
+                res.push((Plan::Y(item.bb.1.y.min(v.1.y)), false, item.clone()));
             }
             2 => {
-                res.push((Plan::Z(t.0.z.max(v.0.z)), true));
-                res.push((Plan::Z(t.1.z.min(v.1.z)), false));
+                res.push((Plan::Z(item.bb.0.z.max(v.0.z)), true, item.clone()));
+                res.push((Plan::Z(item.bb.1.z.min(v.1.z)), false, item.clone()));
             }
             _ => panic!("Invalid dimension number received: ({})", dim),
         }
@@ -184,24 +222,26 @@ where
     }
 
     /// Compute best plan and it's cost
-    fn partition(triangles: &Vec<(AABB, Arc<P>)>, v: &AABB) -> (f32, Plan) {
+    fn partition(items: &Items<P>, v: &AABB) -> (f32, usize, Vec<(Plan, bool, Item<P>)>) {
         let mut best_cost = f32::INFINITY;
-        let mut best_plan = Plan::X(0.);
+        let mut best_plan = 0;
+        let mut best_event_list = vec![];
         for dim in 0..3 {
             let mut event_list = vec![];
-            for t in triangles {
-                event_list.append(&mut Self::perfect_splits(&t.0, v, dim));
+            for item in items {
+                event_list.append(&mut Self::perfect_splits(&item, v, dim));
             }
             event_list.sort_by(|a, b| a.0.cmp(&b.0));
             let mut n_l = 0;
-            let mut n_r = triangles.len();
+            let mut n_r = items.len();
             let mut i = 0;
+            let mut best_changed = false;
             while i < event_list.len() {
-                let p = &event_list[i];
+                let current_plan = i;
                 let mut p_true = 0;
                 let mut p_false = 0;
                 // Plan p is type true (+)
-                if p.1 {
+                if event_list[current_plan].1 {
                     while i < event_list.len() && event_list[i].1 {
                         i += 1;
                         p_true += 1;
@@ -215,31 +255,19 @@ where
                     }
                 }
                 n_r -= p_false;
-                // let (v_l, v_r) = Self::split_space(v, &p.0);
-                // let (t_l, t_r) = Self::classify(triangles, &v_l, &v_r);
-                // assert_eq!(n_l, t_l.len());
-                // assert_eq!(n_r, t_r.len());
-                let cost = Self::sah(&p.0, v, n_l, n_r);
-                n_l += p_true;
+                let cost = Self::sah(&event_list[current_plan].0, v, n_l, n_r);
                 if cost < best_cost {
                     best_cost = cost;
-                    best_plan = p.0.clone();
+                    best_plan = current_plan;
+                    best_changed = true;
                 }
+                n_l += p_true;
+            }
+            if best_changed {
+                best_event_list = event_list.clone();
             }
         }
-        /*
-        for t in triangles {
-            for p in Self::perfect_splits(&t.0, v).iter() {
-                let (v_l, v_r) = Self::split_space(v, p);
-                let (t_l, t_r) = Self::classify(triangles, &v_l, &v_r);
-                let cost = Self::sah(p, v, t_l.len(), t_r.len());
-                if cost < best_cost {
-                    best_cost = cost;
-                    best_plan = p.clone();
-                }
-            }
-        }*/
-        (best_cost, best_plan)
+        (best_cost, best_plan, best_event_list)
     }
 
     fn split_space(space: &AABB, plan: &Plan) -> (AABB, AABB) {
@@ -262,28 +290,22 @@ where
         (left, right)
     }
 
-    fn intersect(a: &AABB, b: &AABB) -> bool {
-        (a.0.x < b.1.x && a.1.x > b.0.x)
-            && (a.0.y < b.1.y && a.1.y > b.0.y)
-            && (a.0.z < b.1.z && a.1.z > b.0.z)
-    }
-
-    fn new(space: AABB, mut items: Vec<(AABB, Arc<P>)>) -> Self {
+    fn new(space: AABB, mut items: Items<P>) -> Self {
         // Find best plan and his cost
-        let (cost, p) = Self::partition(&items, &space);
+        let (cost, best_event, event_list) = Self::partition(&items, &space);
 
         // If the cost of split is higher of cost of the current node then make a leaf
         if cost > 20. * items.len() as f32 {
             let mut res = vec![];
             while let Some(i) = items.pop() {
-                res.push(i.1);
+                res.push(i.value);
             }
             return Self::Leaf { space, items: res };
         }
 
         // Otherwise make a node
-        let (v_l, v_r) = Self::split_space(&space, &p);
-        let (t_l, t_r) = Self::classify(&items, &v_l, &v_r);
+        let (v_l, v_r) = Self::split_space(&space, &event_list[best_event].0);
+        let (t_l, t_r) = Self::classify(&event_list, best_event);
 
         Self::Node {
             left_space: v_l,
