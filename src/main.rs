@@ -13,7 +13,6 @@ use renderer::Renderer;
 use scene::Scene;
 use std::error::Error;
 use std::process::exit;
-use std::time::Instant;
 
 fn main() {
     match run() {
