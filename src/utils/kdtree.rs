@@ -25,20 +25,22 @@ where
 
             if bb.0.x < space.0.x {
                 space.0.x = bb.0.x;
-            } else if bb.1.x > space.1.x {
+            }
+            if bb.1.x > space.1.x {
                 space.1.x = bb.1.x;
             }
             if bb.0.y < space.0.y {
                 space.0.y = bb.0.y;
-            } else if bb.1.y > space.1.y {
+            }
+            if bb.1.y > space.1.y {
                 space.1.y = bb.1.y;
             }
             if bb.0.z < space.0.z {
                 space.0.z = bb.0.z;
-            } else if bb.1.z > space.1.z {
+            }
+            if bb.1.z > space.1.z {
                 space.1.z = bb.1.z;
             }
-
             aabb_items.push((bb, Arc::new(i)));
         }
         let root = KDtreeNode::new(space, aabb_items);
