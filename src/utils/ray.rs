@@ -32,12 +32,6 @@ pub trait Intersectable<P> {
 /// Axis-aligned bounding boxes
 pub type AABB = (Vector3<f32>, Vector3<f32>);
 
-impl BoundingBox for AABB {
-    fn bounding_box(&self) -> AABB {
-        self.clone()
-    }
-}
-
 pub trait BoundingBox {
     fn bounding_box(&self) -> AABB;
 }
