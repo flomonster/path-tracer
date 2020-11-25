@@ -77,27 +77,41 @@ impl Intersectable<Option<Hit>> for Triangle {
 
 impl BoundingBox for Triangle {
     fn bounding_box(&self) -> AABB {
-        let mut bb = (self[0].position, self[0].position);
-        for v in self.triangle.iter() {
-            if bb.0.x > v.position.x {
-                bb.0.x = v.position.x;
-            } else if bb.1.x < v.position.x {
-                bb.1.x = v.position.x;
-            }
-
-            if bb.0.y > v.position.y {
-                bb.0.y = v.position.y;
-            } else if bb.1.y < v.position.y {
-                bb.1.y = v.position.y;
-            }
-
-            if bb.0.z > v.position.z {
-                bb.0.z = v.position.z;
-            } else if bb.1.z < v.position.z {
-                bb.1.z = v.position.z;
-            }
-        }
-        bb
+        let min = Vector3::new(
+            self.triangle[0]
+                .position
+                .x
+                .min(self.triangle[1].position.x)
+                .min(self.triangle[2].position.x),
+            self.triangle[0]
+                .position
+                .y
+                .min(self.triangle[1].position.y)
+                .min(self.triangle[2].position.y),
+            self.triangle[0]
+                .position
+                .z
+                .min(self.triangle[1].position.z)
+                .min(self.triangle[2].position.z),
+        );
+        let max = Vector3::new(
+            self.triangle[0]
+                .position
+                .x
+                .max(self.triangle[1].position.x)
+                .max(self.triangle[2].position.x),
+            self.triangle[0]
+                .position
+                .y
+                .max(self.triangle[1].position.y)
+                .max(self.triangle[2].position.y),
+            self.triangle[0]
+                .position
+                .z
+                .max(self.triangle[1].position.z)
+                .max(self.triangle[2].position.z),
+        );
+        (min, max)
     }
 }
 
