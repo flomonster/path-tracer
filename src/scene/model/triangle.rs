@@ -1,6 +1,33 @@
-use crate::utils::{BoundingBox, Hit, Intersectable, Ray};
+use crate::utils::{Hit, Intersectable, Ray};
 use cgmath::*;
-use easy_gltf::model::Triangle;
+use easy_gltf::model::{Triangle as EasyTriangle, Vertex};
+use kdtree_ray::*;
+use std::ops::{Index, IndexMut};
+
+#[derive(Clone, Debug, Default, PartialEq)]
+pub struct Triangle {
+    triangle: EasyTriangle,
+}
+
+impl From<EasyTriangle> for Triangle {
+    fn from(triangle: EasyTriangle) -> Self {
+        Triangle { triangle }
+    }
+}
+
+impl Index<usize> for Triangle {
+    type Output = Vertex;
+
+    fn index(&self, index: usize) -> &Self::Output {
+        &self.triangle[index]
+    }
+}
+
+impl IndexMut<usize> for Triangle {
+    fn index_mut(&mut self, index: usize) -> &mut Self::Output {
+        &mut self.triangle[index]
+    }
+}
 
 impl Intersectable<Option<Hit>> for Triangle {
     fn intersect(&self, ray: &Ray) -> Option<Hit> {
@@ -49,9 +76,9 @@ impl Intersectable<Option<Hit>> for Triangle {
 }
 
 impl BoundingBox for Triangle {
-    fn bounding_box(&self) -> (Vector3<f32>, Vector3<f32>) {
+    fn bounding_box(&self) -> AABB {
         let mut bb = (self[0].position, self[0].position);
-        for v in self {
+        for v in self.triangle.iter() {
             if bb.0.x > v.position.x {
                 bb.0.x = v.position.x;
             } else if bb.1.x < v.position.x {

@@ -1,9 +1,7 @@
 mod hit;
-mod kdtree;
 mod ray;
 
 pub use hit::Hit;
-pub use kdtree::KDtree;
 pub use ray::*;
 
 use cgmath::*;

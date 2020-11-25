@@ -1,5 +1,5 @@
+use crate::scene::model::Triangle;
 use cgmath::*;
-use easy_gltf::model::Triangle;
 
 #[derive(Debug, Clone, PartialEq)]
 /// Describe an intersection between a ray and a triangle

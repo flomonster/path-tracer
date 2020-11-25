@@ -1,9 +1,10 @@
 mod triangle;
 
 use crate::utils::*;
-use easy_gltf::model::Triangle;
 use easy_gltf::Material;
+use kdtree_ray::{BoundingBox, KDtree, AABB};
 use std::sync::Arc;
+pub use triangle::Triangle;
 
 #[derive(Clone, Debug)]
 pub struct Model {
@@ -14,7 +15,7 @@ pub struct Model {
 impl Intersectable<Option<Hit>> for Model {
     fn intersect(&self, ray: &Ray) -> Option<Hit> {
         let mut best = None;
-        for t in self.triangles.intersect(ray).iter() {
+        for t in self.triangles.intersect(&ray.origin, &ray.direction).iter() {
             if let Some(hit) = t.intersect(ray) {
                 best = match best {
                     None => Some(hit),
@@ -38,7 +39,10 @@ impl From<&easy_gltf::Model> for Model {
         let kdtree = KDtree::new(
             eg_model
                 .triangles()
-                .unwrap_or_else(|_| panic!("Model primitive isn't triangles")),
+                .unwrap_or_else(|_| panic!("Model primitive isn't triangles"))
+                .iter()
+                .map(|t| Triangle::from(t.clone()))
+                .collect(),
         );
         Model {
             triangles: kdtree,
