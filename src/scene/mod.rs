@@ -2,7 +2,7 @@ pub mod model;
 
 use easy_gltf::{Camera, Light};
 
-use crate::utils::*;
+use kdtree_ray::*;
 use model::Model;
 use std::error::Error;
 

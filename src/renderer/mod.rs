@@ -107,7 +107,7 @@ impl Renderer {
 
     fn ray_cast(scene: &Scene, ray: &Ray) -> Option<(Hit, Arc<Model>)> {
         let mut best = None;
-        for model in scene.models.intersect(ray) {
+        for model in scene.models.intersect(&ray.origin, &ray.direction) {
             if let Some(hit) = model.intersect(ray) {
                 best = match best {
                     None => Some((hit, model)),
