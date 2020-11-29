@@ -135,7 +135,12 @@ impl Renderer {
         // Convert sRGB to RGB color space
         let albedo = Vector3::new(albedo.x.powf(2.2), albedo.y.powf(2.2), albedo.z.powf(2.2));
 
-        let n = hit.normal;
+        let n = if let Some(normal) = model.material.get_normal(hit.tex_coords) {
+            Self::normal_tangent_to_world(&normal, hit)
+        } else {
+            hit.normal
+        };
+
         let v = -1. * ray_in.direction;
 
         let f0 = Vector3::new(0.04, 0.04, 0.04);
@@ -173,6 +178,25 @@ impl Renderer {
         );
 
         radiance
+    }
+
+    fn normal_tangent_to_world(normal: &Vector3<f32>, hit: &Hit) -> Vector3<f32> {
+        let edge1 = hit.triangle[1].position - hit.triangle[0].position;
+        let edge2 = hit.triangle[2].position - hit.triangle[0].position;
+        let delta_uv1 = hit.triangle[1].tex_coords - hit.triangle[0].tex_coords;
+        let delta_uv2 = hit.triangle[2].tex_coords - hit.triangle[0].tex_coords;
+
+        let f = 1. / (delta_uv1.x * delta_uv2.y - delta_uv2.x * delta_uv1.y);
+        let tangent = Vector3::new(
+            f * (delta_uv2.y * edge1.x - delta_uv1.y * edge2.x),
+            f * (delta_uv2.y * edge1.y - delta_uv1.y * edge2.y),
+            f * (delta_uv2.y * edge1.z - delta_uv1.y * edge2.z),
+        )
+        .normalize();
+
+        let bitangent = normal.cross(tangent);
+        let tbn = Matrix3::from_cols(tangent, bitangent, hit.normal);
+        (tbn * normal).normalize()
     }
 
     fn fresnel_schlick(cos_theta: f32, f0: Vector3<f32>) -> Vector3<f32> {
