@@ -135,15 +135,15 @@ impl Renderer {
         // Convert sRGB to RGB color space
         let albedo = Vector3::new(albedo.x.powf(2.2), albedo.y.powf(2.2), albedo.z.powf(2.2));
 
-        let n = hit.normal.normalize();
-        let v = (-1. * ray_in.direction).normalize();
+        let n = hit.normal;
+        let v = -1. * ray_in.direction;
 
         let f0 = Vector3::new(0.04, 0.04, 0.04);
         let f0 = f0 * (1. - metalness) + albedo * metalness;
 
         for light in scene.lights.iter() {
             let (light_radiance, light_direction) = Self::get_light_info(light, hit);
-            let l = (-1. * light_direction).normalize();
+            let l = -1. * light_direction;
             let halfway = (v + l).normalize();
 
             let d = Self::distribution_ggx(n, halfway, roughness);
@@ -151,7 +151,7 @@ impl Renderer {
             let f = Self::fresnel_schlick(halfway.dot(v).max(0.), f0);
 
             // Specular
-            let specular = (d * f * g) / (4. * n.dot(v).max(0.) * n.dot(l).max(0.) + 0.001);
+            let specular = (d * f * g) / (4. * n.dot(v).max(0.) * n.dot(l).max(0.)).max(0.001);
 
             // Diffuse
             let kd = Vector3::new(1. - f.x, 1. - f.y, 1. - f.z) * (1. - metalness);
@@ -224,8 +224,7 @@ impl Renderer {
                 let direction = hit.position - position;
                 let dist = direction.magnitude();
                 let direction = direction.normalize();
-                // let light_dissipated = 4. * PI * dist * dist; // 4πr^2
-                let light_dissipated = dist * dist; // r^2
+                let light_dissipated = 4. * PI * dist * dist; // 4πr^2
                 (intensity / light_dissipated * color, direction)
             }
             _ => unimplemented!("Light not implemented: {:?}", light),
