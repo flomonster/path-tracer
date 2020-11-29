@@ -8,8 +8,9 @@ pub struct Hit {
     pub dist: f32,
     pub position: Vector3<f32>,
 
-    /// Barycenter
+    /// Texture coordinate
     pub tex_coords: Vector2<f32>,
+
     /// Normal vector of the triangle at the hit point
     pub normal: Vector3<f32>,
 }
