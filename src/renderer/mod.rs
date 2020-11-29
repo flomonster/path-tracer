@@ -132,35 +132,32 @@ impl Renderer {
         let roughness = model.material.get_roughness(hit.tex_coords);
         let albedo = model.material.get_base_color(hit.tex_coords).truncate();
 
+        // Convert sRGB to RGB color space
+        let albedo = Vector3::new(albedo.x.powf(2.2), albedo.y.powf(2.2), albedo.z.powf(2.2));
+
+        let n = hit.normal.normalize();
+        let v = (-1. * ray_in.direction).normalize();
+
         let f0 = Vector3::new(0.04, 0.04, 0.04);
         let f0 = f0 * (1. - metalness) + albedo * metalness;
 
         for light in scene.lights.iter() {
             let (light_radiance, light_direction) = Self::get_light_info(light, hit);
-            let halfway = -1. * (ray_in.direction + light_direction).normalize();
+            let l = (-1. * light_direction).normalize();
+            let halfway = (v + l).normalize();
 
-            let d = Self::distribution_ggx(hit.normal, halfway, roughness);
-            let g = Self::geometry_smith(
-                hit.normal,
-                -1. * ray_in.direction,
-                -1. * light_direction,
-                roughness,
-            );
-            let f = Self::fresnel_schlick(halfway.dot(-1. * ray_in.direction).max(0.).min(1.), f0);
+            let d = Self::distribution_ggx(n, halfway, roughness);
+            let g = Self::geometry_smith(n, v, l, roughness);
+            let f = Self::fresnel_schlick(halfway.dot(v).max(0.), f0);
 
             // Specular
-            let specular = (d * f * g)
-                / (4.
-                    * (-1. * ray_in.direction).dot(hit.normal).max(0.)
-                    * (-1. * light_direction.dot(hit.normal)).max(0.))
-                .max(0.001);
+            let specular = (d * f * g) / (4. * n.dot(v).max(0.) * n.dot(l).max(0.) + 0.001);
 
             // Diffuse
             let kd = Vector3::new(1. - f.x, 1. - f.y, 1. - f.z) * (1. - metalness);
             let diffuse = kd.mul_element_wise(albedo) / PI;
 
-            radiance += (diffuse + specular).mul_element_wise(light_radiance)
-                * hit.normal.dot(-1. * light_direction);
+            radiance += (diffuse + specular).mul_element_wise(light_radiance) * n.dot(l).max(0.);
         }
 
         if let Some(ao) = model.material.get_occlusion(hit.tex_coords) {
@@ -217,7 +214,7 @@ impl Renderer {
                 direction,
                 color,
                 intensity,
-            } => (*color, direction.clone()),
+            } => (*intensity * color, direction.clone()),
 
             Light::Point {
                 position,
@@ -229,7 +226,7 @@ impl Renderer {
                 let direction = direction.normalize();
                 // let light_dissipated = 4. * PI * dist * dist; // 4πr^2
                 let light_dissipated = dist * dist; // r^2
-                (1. / light_dissipated * color, direction)
+                (intensity / light_dissipated * color, direction)
             }
             _ => unimplemented!("Light not implemented: {:?}", light),
         }
