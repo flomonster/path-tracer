@@ -130,10 +130,7 @@ impl Renderer {
 
         let metalness = model.material.get_metallic(hit.tex_coords);
         let roughness = model.material.get_roughness(hit.tex_coords);
-        let albedo = model.material.get_base_color(hit.tex_coords).truncate();
-
-        // Convert sRGB to RGB color space
-        let albedo = Vector3::new(albedo.x.powf(2.2), albedo.y.powf(2.2), albedo.z.powf(2.2));
+        let albedo = model.material.get_base_color(hit.tex_coords);
 
         let n = if let Some(normal) = model.material.get_normal(hit.tex_coords) {
             Self::normal_tangent_to_world(&normal, hit)
