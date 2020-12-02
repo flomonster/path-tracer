@@ -191,7 +191,7 @@ impl Renderer {
         )
         .normalize();
 
-        let bitangent = normal.cross(tangent);
+        let bitangent = hit.normal.cross(tangent);
         let tbn = Matrix3::from_cols(tangent, bitangent, hit.normal);
         (tbn * normal).normalize()
     }
