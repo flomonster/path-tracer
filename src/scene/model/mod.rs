@@ -1,10 +1,12 @@
 mod triangle;
+mod vertex;
 
 use crate::utils::*;
 use easy_gltf::Material;
 use kdtree_ray::{BoundingBox, KDtree, AABB};
 use std::sync::Arc;
 pub use triangle::Triangle;
+pub use vertex::Vertex;
 
 #[derive(Clone, Debug)]
 pub struct Model {

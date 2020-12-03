@@ -1,17 +1,20 @@
+use super::Vertex;
 use crate::utils::{Hit, Intersectable, Ray};
 use cgmath::*;
-use easy_gltf::model::{Triangle as EasyTriangle, Vertex};
+use easy_gltf::model::Triangle as EasyTriangle;
 use kdtree_ray::*;
 use std::ops::{Index, IndexMut};
 
 #[derive(Clone, Debug, Default, PartialEq)]
-pub struct Triangle {
-    triangle: EasyTriangle,
-}
+pub struct Triangle(Vertex, Vertex, Vertex);
 
 impl From<EasyTriangle> for Triangle {
     fn from(triangle: EasyTriangle) -> Self {
-        Triangle { triangle }
+        Triangle(
+            Vertex::from(&triangle[0]),
+            Vertex::from(&triangle[1]),
+            Vertex::from(&triangle[2]),
+        )
     }
 }
 
@@ -19,13 +22,23 @@ impl Index<usize> for Triangle {
     type Output = Vertex;
 
     fn index(&self, index: usize) -> &Self::Output {
-        &self.triangle[index]
+        match index {
+            0 => &self.0,
+            1 => &self.1,
+            2 => &self.2,
+            _ => panic!("Index out of bound [0-2]"),
+        }
     }
 }
 
 impl IndexMut<usize> for Triangle {
     fn index_mut(&mut self, index: usize) -> &mut Self::Output {
-        &mut self.triangle[index]
+        match index {
+            0 => &mut self.0,
+            1 => &mut self.1,
+            2 => &mut self.2,
+            _ => panic!("Index out of bound [0-2]"),
+        }
     }
 }
 
@@ -78,38 +91,38 @@ impl Intersectable<Option<Hit>> for Triangle {
 impl BoundingBox for Triangle {
     fn bounding_box(&self) -> AABB {
         let min = Vector3::new(
-            self.triangle[0]
+            self[0]
                 .position
                 .x
-                .min(self.triangle[1].position.x)
-                .min(self.triangle[2].position.x),
-            self.triangle[0]
+                .min(self[1].position.x)
+                .min(self[2].position.x),
+            self[0]
                 .position
                 .y
-                .min(self.triangle[1].position.y)
-                .min(self.triangle[2].position.y),
-            self.triangle[0]
+                .min(self[1].position.y)
+                .min(self[2].position.y),
+            self[0]
                 .position
                 .z
-                .min(self.triangle[1].position.z)
-                .min(self.triangle[2].position.z),
+                .min(self[1].position.z)
+                .min(self[2].position.z),
         );
         let max = Vector3::new(
-            self.triangle[0]
+            self[0]
                 .position
                 .x
-                .max(self.triangle[1].position.x)
-                .max(self.triangle[2].position.x),
-            self.triangle[0]
+                .max(self[1].position.x)
+                .max(self[2].position.x),
+            self[0]
                 .position
                 .y
-                .max(self.triangle[1].position.y)
-                .max(self.triangle[2].position.y),
-            self.triangle[0]
+                .max(self[1].position.y)
+                .max(self[2].position.y),
+            self[0]
                 .position
                 .z
-                .max(self.triangle[1].position.z)
-                .max(self.triangle[2].position.z),
+                .max(self[1].position.z)
+                .max(self[2].position.z),
         );
         AABB(min, max)
     }
