@@ -4,6 +4,7 @@ use easy_gltf::{Camera, Light};
 
 use kdtree_ray::*;
 use model::Model;
+use rayon::prelude::*;
 use std::error::Error;
 
 #[derive(Debug, Clone)]
@@ -22,7 +23,7 @@ impl Scene {
             panic!("No scene found")
         }
 
-        let models = KDtree::new(scenes[0].models.iter().map(|m| m.into()).collect());
+        let models = KDtree::new(scenes[0].models.par_iter().map(|m| m.into()).collect());
 
         if scenes[0].cameras.is_empty() {
             // TODO: Return error instead
