@@ -54,7 +54,7 @@ impl Intersectable<Option<Hit>> for Triangle {
         let det = v0v1.dot(pvec);
 
         // Check face culling
-        if det < 0.0001 {
+        if det < 0.000001 {
             return None;
         }
 
@@ -75,7 +75,7 @@ impl Intersectable<Option<Hit>> for Triangle {
         let dist = v0v2.dot(qvec) * invdet;
 
         // Check triangle behind
-        if dist < 0.0001 {
+        if dist < 0.000001 {
             return None;
         }
 
