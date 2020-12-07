@@ -144,7 +144,11 @@ impl Renderer {
         let f0 = f0 * (1. - metalness) + albedo * metalness;
 
         for light in scene.lights.iter() {
-            let (light_radiance, light_direction) = Self::get_light_info(light, hit);
+            let (light_radiance, light_direction) = Self::get_light_info(light, hit, scene);
+            if light_radiance == Zero::zero() {
+                continue;
+            }
+
             let l = -1. * light_direction;
             let halfway = (v + l).normalize();
 
@@ -229,13 +233,21 @@ impl Renderer {
         return num / denom;
     }
 
-    fn get_light_info(light: &Light, hit: &Hit) -> (Vector3<f32>, Vector3<f32>) {
+    fn get_light_info(light: &Light, hit: &Hit, scene: &Scene) -> (Vector3<f32>, Vector3<f32>) {
         match light {
             Light::Directional {
                 direction,
                 color,
                 intensity,
-            } => (*intensity * color, direction.clone()),
+            } => {
+                let shadow_ray_ori = hit.position + hit.normal * 0.00001;
+                let shadow_ray_dir = -1. * direction;
+                let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
+                match Self::ray_cast(scene, &shadow_ray) {
+                    None => (*intensity * color, direction.clone()),
+                    _ => (Vector3::zero(), Vector3::zero()),
+                }
+            }
 
             Light::Point {
                 position,
@@ -245,8 +257,18 @@ impl Renderer {
                 let direction = hit.position - position;
                 let dist = direction.magnitude();
                 let direction = direction.normalize();
-                let light_dissipated = 4. * PI * dist * dist; // 4πr^2
-                (intensity / light_dissipated * color, direction)
+
+                let shadow_ray_ori = hit.position + hit.normal * 0.00001;
+                let shadow_ray_dir = -1. * direction;
+                let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
+
+                match Self::ray_cast(scene, &shadow_ray) {
+                    Some(x) if x.0.dist < dist => (Vector3::zero(), Vector3::zero()),
+                    _ => {
+                        let light_dissipated = 4. * PI * dist * dist; // 4πr^2
+                        (intensity / light_dissipated * color, direction)
+                    }
+                }
             }
             _ => unimplemented!("Light not implemented: {:?}", light),
         }
