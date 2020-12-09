@@ -262,12 +262,15 @@ impl Renderer {
                 let shadow_ray_dir = -1. * direction;
                 let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
 
+                let dissipation = 4. * PI * dist * dist; // 4πr^2
+                let light_dissipated = intensity / dissipation * color;
+
                 match Self::ray_cast(scene, &shadow_ray) {
-                    Some(x) if x.0.dist < dist => (Vector3::zero(), Vector3::zero()),
-                    _ => {
-                        let light_dissipated = 4. * PI * dist * dist; // 4πr^2
-                        (intensity / light_dissipated * color, direction)
-                    }
+                    Some(x) => {
+                        let shadow_factor = (x.0.dist / dist).min(1.); // tricked soft shadow
+                        (light_dissipated * shadow_factor, direction)
+                    },
+                    _ => (light_dissipated, direction)
                 }
             }
             _ => unimplemented!("Light not implemented: {:?}", light),
