@@ -15,6 +15,8 @@ pub struct Renderer {
     width: u32,
     height: u32,
     quiet: bool,
+    max_depth: usize,
+    bounces: usize,
 }
 
 impl Renderer {
@@ -24,6 +26,8 @@ impl Renderer {
             width: config.resolution.x,
             height: config.resolution.y,
             quiet: config.quiet,
+            max_depth: config.max_depth,
+            bounces: config.bounces,
         }
     }
 
@@ -67,7 +71,7 @@ impl Renderer {
                         let ray = Ray::new(scene.camera.position(), ray_dir);
 
                         // Compute pixel color
-                        let color = Self::render_pixel(scene, &ray, 4);
+                        let color = Self::render_pixel(scene, &ray, self.max_depth, self.bounces);
                         // Convert Vector3 into Rgb
                         let color = Rgb::from([
                             (color.x * 255.) as u8,
@@ -95,13 +99,10 @@ impl Renderer {
     }
 
     /// Render the color of a pixel given a ray and the scene
-    fn render_pixel(scene: &Scene, ray: &Ray, max_bounds: i32) -> Vector3<f32> {
-        if max_bounds < 0 {
-            return Vector3::new(0., 0., 0.);
-        }
+    fn render_pixel(scene: &Scene, ray: &Ray, max_depth: usize, bounces: usize) -> Vector3<f32> {
         match Self::ray_cast(scene, ray) {
             None => Vector3::new(0., 0., 0.),
-            Some((hit, model)) => Self::radiance(scene, model, &hit, ray, max_bounds),
+            Some((hit, model)) => Self::radiance(scene, model, &hit, ray, max_depth, bounces),
         }
     }
 
@@ -124,7 +125,8 @@ impl Renderer {
         model: Arc<Model>,
         hit: &Hit,
         ray_in: &Ray,
-        _max_bounds: i32,
+        max_depth: usize,
+        bounces: usize,
     ) -> Vector3<f32> {
         let mut radiance = Vector3::zero();
 
@@ -143,6 +145,7 @@ impl Renderer {
         let f0 = Vector3::new(0.04, 0.04, 0.04);
         let f0 = f0 * (1. - metalness) + albedo * metalness;
 
+        // Direct Light computation
         for light in scene.lights.iter() {
             let (light_radiance, light_direction) = Self::get_light_info(light, hit, scene);
             if light_radiance == Zero::zero() {
@@ -166,6 +169,33 @@ impl Renderer {
             radiance += (diffuse + specular).mul_element_wise(light_radiance) * n.dot(l).max(0.);
         }
 
+        // Indirect light computation
+        if max_depth > 0 {
+            let nt = if n.x.abs() > n.y.abs() {
+                Vector3::new(n.z, 0., -n.x) / (n.x * n.x + n.z * n.z).sqrt()
+            } else {
+                Vector3::new(0., -n.z, n.y) / (n.y * n.y + n.z * n.z).sqrt()
+            };
+            let nb = n.cross(nt);
+            let sample_to_world = Matrix3::new(nb.x, n.x, nt.x, nb.y, n.y, nt.y, nb.z, n.z, nt.z);
+
+            for _ in 0..bounces {
+                let ray_bounce_dir = Self::uniform_hemishpere(&sample_to_world).normalize();
+
+                let ray_bounce = Ray::new(hit.position + hit.normal * 0.00001, ray_bounce_dir);
+
+                let light_radiance = Self::render_pixel(scene, &ray_bounce, max_depth - 1, bounces);
+
+                let l = -1. * ray_bounce_dir;
+
+                // Diffuse
+                let diffuse = light_radiance * 2. * PI / bounces as f32;
+
+                radiance += diffuse.mul_element_wise(albedo) * n.dot(l).max(0.);
+            }
+        }
+
+        // Maybe need to remove this part with indirect light
         if let Some(ao) = model.material.get_occlusion(hit.tex_coords) {
             radiance += 0.03 * ao * albedo;
         }
@@ -179,6 +209,16 @@ impl Renderer {
         );
 
         radiance
+    }
+
+    fn uniform_hemishpere(sample_to_world: &Matrix3<f32>) -> Vector3<f32> {
+        let r1: f32 = rand::random();
+        let r2: f32 = rand::random();
+        let sin_theta = (1. - r1 * r1).sqrt();
+        let phi = 2. * PI * r2;
+        let x = sin_theta * phi.cos();
+        let z = sin_theta * phi.sin();
+        return sample_to_world * Vector3::new(x, r1, z);
     }
 
     fn normal_tangent_to_world(normal: &Vector3<f32>, hit: &Hit) -> Vector3<f32> {
@@ -269,8 +309,8 @@ impl Renderer {
                     Some(x) => {
                         let shadow_factor = (x.0.dist / dist).min(1.); // tricked soft shadow
                         (light_dissipated * shadow_factor, direction)
-                    },
-                    _ => (light_dissipated, direction)
+                    }
+                    _ => (light_dissipated, direction),
                 }
             }
             _ => unimplemented!("Light not implemented: {:?}", light),

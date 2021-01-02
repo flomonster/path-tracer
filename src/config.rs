@@ -10,11 +10,17 @@ pub struct Config {
     pub output: PathBuf,
     pub resolution: Vector2<u32>,
     pub quiet: bool,
+    pub max_depth: usize,
+    pub bounces: usize,
 }
 
 impl Config {
     /// Load a config from program arguments
     pub fn load(args: &ArgMatches) -> Result<Self, Box<dyn Error>> {
+        // Load default config
+        let mut config = Config::default();
+
+        // Parse resolution
         let resolution = args.value_of("resolution").unwrap();
         let mut res_iter = resolution.split("x");
 
@@ -25,19 +31,16 @@ impl Config {
             )));
         }
 
-        // Parse resolution
-        let resolution = Vector2::new(
+        // Apply parameters
+        config.resolution = Vector2::new(
             res_iter.next().unwrap().parse().unwrap(),
             res_iter.next().unwrap().parse().unwrap(),
         );
+        config.input = args.value_of("INPUT").unwrap().into();
+        config.output = args.value_of("OUTPUT").unwrap().into();
+        config.quiet = args.is_present("quiet");
 
-        // Build config
-        Ok(Config {
-            input: args.value_of("INPUT").unwrap().into(),
-            output: args.value_of("OUTPUT").unwrap().into(),
-            resolution,
-            quiet: args.is_present("quiet"),
-        })
+        Ok(config)
     }
 }
 
@@ -48,6 +51,8 @@ impl Default for Config {
             input: Default::default(),
             output: Default::default(),
             quiet: true,
+            max_depth: 2,
+            bounces: 16,
         }
     }
 }
