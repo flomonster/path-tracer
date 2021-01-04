@@ -4,16 +4,26 @@ about: Path-trace awesome things
 args:
     - INPUT:
         required: true
-        help: Input file name OBJ format
+        help: Input file name GLTF format
     - OUTPUT:
         required: true
         help: Output image name
     - resolution:
         short: r
         long: resolution
-        default_value: "854x480"
+        default_value: "800x800"
         help: Set resolution of the computed image
     - quiet:
         long: quiet
         short: q
         help: No progress bar printed
+    - bounces:
+         long: bounces
+         short: b
+         default_value: "2"
+         help: Maximum number of bounces of a light ray
+    - samples:
+         long: samples
+         short: s
+         default_value: "16"
+         help: Number of samples to render for each pixel

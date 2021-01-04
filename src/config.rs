@@ -10,8 +10,8 @@ pub struct Config {
     pub output: PathBuf,
     pub resolution: Vector2<u32>,
     pub quiet: bool,
-    pub max_depth: usize,
     pub bounces: usize,
+    pub samples: usize,
 }
 
 impl Config {
@@ -31,11 +31,31 @@ impl Config {
             )));
         }
 
-        // Apply parameters
+        // Apply resolution
         config.resolution = Vector2::new(
             res_iter.next().unwrap().parse().unwrap(),
             res_iter.next().unwrap().parse().unwrap(),
         );
+
+        // Apply bounces
+        if let Ok(bounces) = args.value_of("bounces").unwrap().parse() {
+            config.bounces = bounces;
+        } else {
+            return Err(Box::new(ConfigError::InvalidBounces(
+                args.value_of("bounces").unwrap().to_string(),
+            )));
+        }
+
+        // Apply samples
+        if let Ok(samples) = args.value_of("samples").unwrap().parse() {
+            config.samples = samples;
+        } else {
+            return Err(Box::new(ConfigError::InvalidSamples(
+                args.value_of("samples").unwrap().to_string(),
+            )));
+        }
+
+        // Apply other options and parameters
         config.input = args.value_of("INPUT").unwrap().into();
         config.output = args.value_of("OUTPUT").unwrap().into();
         config.quiet = args.is_present("quiet");
@@ -51,8 +71,8 @@ impl Default for Config {
             input: Default::default(),
             output: Default::default(),
             quiet: true,
-            max_depth: 2,
-            bounces: 16,
+            bounces: 2,
+            samples: 16,
         }
     }
 }
@@ -60,6 +80,8 @@ impl Default for Config {
 #[derive(Debug)]
 enum ConfigError {
     InvalidResolution(String),
+    InvalidBounces(String),
+    InvalidSamples(String),
 }
 
 impl fmt::Display for ConfigError {
@@ -69,6 +91,16 @@ impl fmt::Display for ConfigError {
                 f,
                 "Invalid resolution: '{}'\nExample of valid resolution: '1920x1080'",
                 res
+            ),
+            ConfigError::InvalidBounces(value) => write!(
+                f,
+                "Invalid bounces: '{}'\nExample of valid number of bounces: '4'",
+                value
+            ),
+            ConfigError::InvalidSamples(value) => write!(
+                f,
+                "Invalid samples: '{}'\nExample of valid number of samples: '16'",
+                value
             ),
         }
     }

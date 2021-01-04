@@ -15,7 +15,7 @@ pub struct Renderer {
     width: u32,
     height: u32,
     quiet: bool,
-    max_depth: usize,
+    samples: usize,
     bounces: usize,
 }
 
@@ -26,7 +26,7 @@ impl Renderer {
             width: config.resolution.x,
             height: config.resolution.y,
             quiet: config.quiet,
-            max_depth: config.max_depth,
+            samples: config.samples,
             bounces: config.bounces,
         }
     }
@@ -71,7 +71,7 @@ impl Renderer {
                         let ray = Ray::new(scene.camera.position(), ray_dir);
 
                         // Compute pixel color
-                        let color = Self::render_pixel(scene, &ray, self.max_depth, self.bounces);
+                        let color = Self::render_pixel(scene, &ray, self.bounces, self.samples);
                         // Convert Vector3 into Rgb
                         let color = Rgb::from([
                             (color.x * 255.) as u8,
@@ -99,10 +99,10 @@ impl Renderer {
     }
 
     /// Render the color of a pixel given a ray and the scene
-    fn render_pixel(scene: &Scene, ray: &Ray, max_depth: usize, bounces: usize) -> Vector3<f32> {
+    fn render_pixel(scene: &Scene, ray: &Ray, bounces: usize, samples: usize) -> Vector3<f32> {
         match Self::ray_cast(scene, ray) {
             None => Vector3::new(0., 0., 0.),
-            Some((hit, model)) => Self::radiance(scene, model, &hit, ray, max_depth, bounces),
+            Some((hit, model)) => Self::radiance(scene, model, &hit, ray, bounces, samples),
         }
     }
 
@@ -125,8 +125,8 @@ impl Renderer {
         model: Arc<Model>,
         hit: &Hit,
         ray_in: &Ray,
-        max_depth: usize,
         bounces: usize,
+        samples: usize,
     ) -> Vector3<f32> {
         let mut radiance = Vector3::zero();
 
@@ -170,7 +170,7 @@ impl Renderer {
         }
 
         // Indirect light computation
-        if max_depth > 0 {
+        if bounces > 0 {
             let nt = if n.x.abs() > n.y.abs() {
                 Vector3::new(n.z, 0., -n.x) / (n.x * n.x + n.z * n.z).sqrt()
             } else {
@@ -179,17 +179,17 @@ impl Renderer {
             let nb = n.cross(nt);
             let sample_to_world = Matrix3::new(nb.x, n.x, nt.x, nb.y, n.y, nt.y, nb.z, n.z, nt.z);
 
-            for _ in 0..bounces {
+            for _ in 0..samples {
                 let ray_bounce_dir = Self::uniform_hemishpere(&sample_to_world).normalize();
 
                 let ray_bounce = Ray::new(hit.position + hit.normal * 0.00001, ray_bounce_dir);
 
-                let light_radiance = Self::render_pixel(scene, &ray_bounce, max_depth - 1, bounces);
+                let light_radiance = Self::render_pixel(scene, &ray_bounce, bounces - 1, samples);
 
                 let l = -1. * ray_bounce_dir;
 
                 // Diffuse
-                let diffuse = light_radiance * 2. * PI / bounces as f32;
+                let diffuse = light_radiance * 2. * PI / samples as f32;
 
                 radiance += diffuse.mul_element_wise(albedo) * n.dot(l).max(0.);
             }
