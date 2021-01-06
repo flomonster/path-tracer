@@ -10,6 +10,7 @@ use crate::Config;
 use easy_gltf::Light;
 use rayon::ThreadPoolBuilder;
 use std::f32::consts::PI;
+use std::time::Instant;
 
 pub struct Renderer {
     width: u32,
@@ -53,6 +54,7 @@ impl Renderer {
 
         // Create thread pool
         let pool = ThreadPoolBuilder::new().num_threads(8).build().unwrap();
+        let now = Instant::now();
 
         pool.scope(|s| {
             for x in 0..self.width {
@@ -91,7 +93,7 @@ impl Renderer {
             }
         });
         if let Some(ref mut pb) = *pb.lock().unwrap() {
-            pb.finish_print("Done!");
+            pb.finish_print(format!("Done: {}s", now.elapsed().as_secs()).as_str());
         }
 
         // Unwrap image
