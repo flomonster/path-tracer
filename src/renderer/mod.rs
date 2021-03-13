@@ -188,12 +188,10 @@ impl Renderer {
 
                 let light_radiance = Self::render_pixel(scene, &ray_bounce, bounces - 1, samples);
 
-                let l = -1. * ray_bounce_dir;
-
                 // Diffuse
                 let diffuse = light_radiance * 2. * PI / samples as f32;
 
-                radiance += diffuse.mul_element_wise(albedo) * n.dot(l).max(0.);
+                radiance += diffuse.mul_element_wise(albedo) * n.dot(ray_bounce_dir).max(0.);
             }
         }
 
