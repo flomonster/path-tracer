@@ -21,6 +21,9 @@ pub struct Renderer {
 }
 
 impl Renderer {
+    // To avoid self-intersection
+    const NORMAL_BIAS: f32 = 0.00001;
+
     /// Create new raytracer given resolution
     pub fn new(config: &Config) -> Self {
         Renderer {
@@ -130,8 +133,6 @@ impl Renderer {
         bounces: usize,
         samples: usize,
     ) -> Vector3<f32> {
-        let mut radiance = Vector3::zero();
-
         let metalness = model.material.get_metallic(hit.tex_coords);
         let roughness = model.material.get_roughness(hit.tex_coords);
         let albedo = model.material.get_base_color(hit.tex_coords);
@@ -148,6 +149,7 @@ impl Renderer {
         let f0 = f0 * (1. - metalness) + albedo * metalness;
 
         // Direct Light computation
+        let mut direct_radiance = Vector3::zero();
         for light in scene.lights.iter() {
             let (light_radiance, light_direction) = Self::get_light_info(light, hit, scene);
             if light_radiance == Zero::zero() {
@@ -168,32 +170,28 @@ impl Renderer {
             let kd = Vector3::new(1. - f.x, 1. - f.y, 1. - f.z) * (1. - metalness);
             let diffuse = kd.mul_element_wise(albedo) / PI;
 
-            radiance += (diffuse + specular).mul_element_wise(light_radiance) * n.dot(l).max(0.);
+            direct_radiance += (diffuse + specular).mul_element_wise(light_radiance) * n.dot(l).max(0.);
         }
 
         // Indirect light computation
+        let mut indirect_radiance = Vector3::zero();
         if bounces > 0 {
-            let nt = if n.x.abs() > n.y.abs() {
-                Vector3::new(n.z, 0., -n.x) / (n.x * n.x + n.z * n.z).sqrt()
-            } else {
-                Vector3::new(0., -n.z, n.y) / (n.y * n.y + n.z * n.z).sqrt()
-            };
-            let nb = n.cross(nt);
-            let sample_to_world = Matrix3::new(nb.x, n.x, nt.x, nb.y, n.y, nt.y, nb.z, n.z, nt.z);
+            let transform_to_world = Self::transform_to_world(&n);
 
             for _ in 0..samples {
-                let ray_bounce_dir = Self::uniform_hemishpere(&sample_to_world).normalize();
-
-                let ray_bounce = Ray::new(hit.position + hit.normal * 0.00001, ray_bounce_dir);
+                let ray_bounce_dir = Self::uniform_hemisphere(&transform_to_world);
+                let ray_bounce = Ray::new(hit.position + hit.normal * Self::NORMAL_BIAS, ray_bounce_dir);
 
                 let light_radiance = Self::render_pixel(scene, &ray_bounce, bounces - 1, samples);
 
                 // Diffuse
                 let diffuse = light_radiance * 2. * PI / samples as f32;
 
-                radiance += diffuse.mul_element_wise(albedo) * n.dot(ray_bounce_dir).max(0.);
+                indirect_radiance += diffuse.mul_element_wise(albedo) * n.dot(ray_bounce_dir).max(0.);
             }
         }
+
+        let mut radiance = direct_radiance + indirect_radiance;
 
         // Maybe need to remove this part with indirect light
         if let Some(ao) = model.material.get_occlusion(hit.tex_coords) {
@@ -211,14 +209,27 @@ impl Renderer {
         radiance
     }
 
-    fn uniform_hemishpere(sample_to_world: &Matrix3<f32>) -> Vector3<f32> {
+    fn transform_to_world(n: &Vector3<f32>) -> Matrix3<f32> {
+        // Create a local coordinate system (n, nb, nt) oriented along the normal
+        let nt = if n.x.abs() > n.y.abs() {
+            Vector3::new(n.z, 0., -n.x) / (n.x * n.x + n.z * n.z).sqrt()
+        } else {
+            Vector3::new(0., -n.z, n.y) / (n.y * n.y + n.z * n.z).sqrt()
+        };
+        let nb = n.cross(nt);
+
+        // Return the transformation matrix
+        return Matrix3::new(nb.x, n.x, nt.x, nb.y, n.y, nt.y, nb.z, n.z, nt.z);
+    }
+
+    fn uniform_hemisphere(transform_to_world: &Matrix3<f32>) -> Vector3<f32> {
         let r1: f32 = rand::random();
         let r2: f32 = rand::random();
         let sin_theta = (1. - r1 * r1).sqrt();
         let phi = 2. * PI * r2;
         let x = sin_theta * phi.cos();
         let z = sin_theta * phi.sin();
-        return sample_to_world * Vector3::new(x, r1, z);
+        return (transform_to_world * Vector3::new(x, r1, z)).normalize();
     }
 
     fn normal_tangent_to_world(normal: &Vector3<f32>, hit: &Hit) -> Vector3<f32> {
@@ -280,7 +291,7 @@ impl Renderer {
                 color,
                 intensity,
             } => {
-                let shadow_ray_ori = hit.position + hit.normal * 0.00001;
+                let shadow_ray_ori = hit.position + hit.normal * Self::NORMAL_BIAS;
                 let shadow_ray_dir = -1. * direction;
                 let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
                 match Self::ray_cast(scene, &shadow_ray) {
@@ -298,7 +309,7 @@ impl Renderer {
                 let dist = direction.magnitude();
                 let direction = direction.normalize();
 
-                let shadow_ray_ori = hit.position + hit.normal * 0.00001;
+                let shadow_ray_ori = hit.position + hit.normal * Self::NORMAL_BIAS;
                 let shadow_ray_dir = -1. * direction;
                 let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
 
