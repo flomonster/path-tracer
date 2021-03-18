@@ -157,25 +157,13 @@ impl Renderer {
             }
 
             let l = -1. * light_direction;
-            let halfway = (v + l).normalize();
-
-            let d = Self::distribution_ggx(n, halfway, roughness);
-            let g = Self::geometry_smith(n, v, l, roughness);
-            let f = Self::fresnel_schlick(halfway.dot(v).max(0.), f0);
-
-            // Specular
-            let specular = (d * f * g) / (4. * n.dot(v).max(0.) * n.dot(l).max(0.)).max(0.001);
-
-            // Diffuse
-            let kd = Vector3::new(1. - f.x, 1. - f.y, 1. - f.z) * (1. - metalness);
-            let diffuse = kd.mul_element_wise(albedo) / PI;
-
-            direct_radiance += (diffuse + specular).mul_element_wise(light_radiance) * n.dot(l).max(0.);
+            direct_radiance += Self::brdf_eval(&v, &l, &n, &light_radiance, metalness, roughness, &albedo, &f0);
         }
 
         // Indirect light computation
         let mut indirect_radiance = Vector3::zero();
         if bounces > 0 {
+            let pdf = 1. / (2. * PI);
             let transform_to_world = Self::transform_to_world(&n);
 
             for _ in 0..samples {
@@ -184,11 +172,14 @@ impl Renderer {
 
                 let light_radiance = Self::render_pixel(scene, &ray_bounce, bounces - 1, samples);
 
-                // Diffuse
-                let diffuse = light_radiance * 2. * PI / samples as f32;
-
-                indirect_radiance += diffuse.mul_element_wise(albedo) * n.dot(ray_bounce_dir).max(0.);
+                let l = ray_bounce_dir;
+                let sample_radiance = Self::brdf_eval(&v, &l, &n, &light_radiance, metalness, roughness, &albedo, &f0);
+                
+                let weighted_sample_radiance = sample_radiance / pdf;
+                
+                indirect_radiance += weighted_sample_radiance;
             }
+            indirect_radiance /= samples as f32;
         }
 
         let mut radiance = direct_radiance + indirect_radiance;
@@ -207,6 +198,38 @@ impl Renderer {
         );
 
         radiance
+    }
+
+    // Cook-Torrance specular BRDF
+    fn brdf_eval(
+        view_direction: &Vector3<f32>, // from hit point to the viewer
+        light_direction: &Vector3<f32>, // from hit point to the light
+        normal: &Vector3<f32>,
+        light_radiance: &Vector3<f32>,
+        metalness: f32,
+        roughness: f32,
+        albedo: &Vector3<f32>,
+        f0: &Vector3<f32>
+    ) -> Vector3<f32> {
+        
+        let v = *view_direction;
+        let l = *light_direction;
+        let n = *normal;
+
+        let halfway = (v + l).normalize();
+
+        let d = Self::distribution_ggx(n, halfway, roughness);
+        let g = Self::geometry_smith(n, v, l, roughness);
+        let f = Self::fresnel_schlick(halfway.dot(v).max(0.), *f0);
+
+        // Specular
+        let specular = (d * f * g) / (4. * n.dot(v).max(0.) * n.dot(l).max(0.)).max(0.001);
+
+        // Diffuse
+        let kd = Vector3::new(1. - f.x, 1. - f.y, 1. - f.z) * (1. - metalness);
+        let diffuse = kd.mul_element_wise(*albedo) / PI;
+
+        return (diffuse + specular).mul_element_wise(*light_radiance) * n.dot(l).max(0.);
     }
 
     fn transform_to_world(n: &Vector3<f32>) -> Matrix3<f32> {
@@ -251,7 +274,7 @@ impl Renderer {
         (tbn * normal).normalize()
     }
 
-    fn fresnel_schlick(cos_theta: f32, f0: Vector3<f32>) -> Vector3<f32> {
+    fn fresnel_schlick(cos_theta: f32, f0: Vector3<f32>) -> Vector3<f32> { // FIXME use ref on vector3
         f0 + (Vector3::new(1. - f0.x, 1. - f0.y, 1. - f0.z)) * (1. - cos_theta).powi(5)
     }
 
@@ -262,7 +285,7 @@ impl Renderer {
         num / denom
     }
 
-    fn geometry_smith(n: Vector3<f32>, v: Vector3<f32>, l: Vector3<f32>, a: f32) -> f32 {
+    fn geometry_smith(n: Vector3<f32>, v: Vector3<f32>, l: Vector3<f32>, a: f32) -> f32 { // FIXME use ref on vector3
         let k = (a + 1.).powi(2) / 8.;
         let n_dot_v = n.dot(v).max(0.);
         let n_dot_l = n.dot(l).max(0.);
@@ -272,7 +295,7 @@ impl Renderer {
         return ggx1 * ggx2;
     }
 
-    fn distribution_ggx(n: Vector3<f32>, h: Vector3<f32>, a: f32) -> f32 {
+    fn distribution_ggx(n: Vector3<f32>, h: Vector3<f32>, a: f32) -> f32 { // FIXME use ref on vector3
         let a2 = a.powi(4);
         let n_dot_h = n.dot(h).max(0.); //max(dot(N, H), 0.0);
         let n_dot_h_2 = n_dot_h * n_dot_h;
