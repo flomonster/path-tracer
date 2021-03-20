@@ -1,25 +1,25 @@
 mod cook_torrance;
 
-use easy_gltf::Material;
-use std::sync::Arc;
+use super::MaterialSample;
 use cgmath::*;
 pub use cook_torrance::CookTorrance;
 
 pub trait Brdf: Default {
-    fn new(material: &Arc<Material>, tex_coords: Vector2<f32>, geometric_normal: Vector3<f32>) -> Self;
+    fn new(material: &MaterialSample, geometric_normal: Vector3<f32>) -> Self;
 
     fn sample(&self, v: Vector3<f32>) -> Vector3<f32>;
 
-    fn eval(&self,
+    fn eval(
+        &self,
         geometric_normal: Vector3<f32>,
-        view_direction: Vector3<f32>, // from hit point to the viewer
+        view_direction: Vector3<f32>,  // from hit point to the viewer
         light_direction: Vector3<f32>, // from hit point to the light
-        light_radiance: Vector3<f32>    
+        light_radiance: Vector3<f32>,
     ) -> Vector3<f32>;
 
     fn pdf(&self, geometric_normal: Vector3<f32>, v: Vector3<f32>, l: Vector3<f32>) -> f32;
 
-    fn get_ambient_occlusion(&self) -> Vector3<f32>; 
+    fn get_ambient_occlusion(&self) -> Vector3<f32>;
 }
 
 // Transform any coordinate system to world coordinates

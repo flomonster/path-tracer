@@ -1,17 +1,14 @@
-use crate::renderer::brdf::Brdf;
 use super::transform_to_world;
-use easy_gltf::Material;
-use std::sync::Arc;
+use crate::renderer::brdf::Brdf;
+use crate::renderer::MaterialSample;
 use cgmath::*;
 use std::f32::consts::PI;
 
 pub struct CookTorrance {
-    // TODO: Replace by material struct ?
     metalness: f32,
     roughness: f32,
     albedo: Vector3<f32>,
     ambient_occlusion: Vector3<f32>,
-
     f0: Vector3<f32>, // surface reflection at zero incidence from Fresnel-Schlick approximation
     microfacet_normal: Vector3<f32>, // a.k.a. Wm
 }
@@ -23,7 +20,6 @@ impl Default for CookTorrance {
             roughness: 0.,
             albedo: Zero::zero(),
             ambient_occlusion: Zero::zero(),
-
             f0: Zero::zero(),
             microfacet_normal: Zero::zero(),
         }
@@ -31,24 +27,24 @@ impl Default for CookTorrance {
 }
 
 impl Brdf for CookTorrance {
-    fn new(material: &Arc<Material>, tex_coords: Vector2<f32>, geometric_normal: Vector3<f32>) -> Self {
-        let metalness = material.get_metallic(tex_coords);
-        let roughness = material.get_roughness(tex_coords);
-        let albedo = material.get_base_color(tex_coords);
-        let ambient_occlusion = material.get_occlusion(tex_coords);
-
+    fn new(material: &MaterialSample, geometric_normal: Vector3<f32>) -> Self {
         Self {
-            metalness,
-            roughness,
-            albedo,
-            ambient_occlusion: Self::compute_ambient_occlusion(albedo, ambient_occlusion),
-
-            f0: Self::compute_f0(metalness, albedo),
-            microfacet_normal: Self::brdf_get_microfacet_normal(geometric_normal, roughness),
+            metalness: material.metalness,
+            roughness: material.roughness,
+            albedo: material.albedo,
+            ambient_occlusion: Self::compute_ambient_occlusion(
+                material.albedo,
+                material.ambient_occlusion,
+            ),
+            f0: Self::compute_f0(material.metalness, material.albedo),
+            microfacet_normal: Self::brdf_get_microfacet_normal(
+                geometric_normal,
+                material.roughness,
+            ),
         }
     }
 
-    fn sample(&self, v: Vector3<f32>) -> Vector3<f32> { 
+    fn sample(&self, v: Vector3<f32>) -> Vector3<f32> {
         // Compute direction by reflecting v about the microfacet normal
         let sample_dir = 2. * v.dot(self.microfacet_normal) * self.microfacet_normal - v;
         // TODO: try using 'reflection' function from utils
@@ -56,13 +52,13 @@ impl Brdf for CookTorrance {
     }
 
     // Cook-Torrance specular BRDF
-    fn eval(&self,
+    fn eval(
+        &self,
         geometric_normal: Vector3<f32>,
-        view_direction: Vector3<f32>, // from hit point to the viewer
+        view_direction: Vector3<f32>,  // from hit point to the viewer
         light_direction: Vector3<f32>, // from hit point to the light
-        light_radiance: Vector3<f32>
+        light_radiance: Vector3<f32>,
     ) -> Vector3<f32> {
-        
         let n = geometric_normal;
         let v = view_direction;
         let l = light_direction;
@@ -84,22 +80,21 @@ impl Brdf for CookTorrance {
         return (diffuse + specular).mul_element_wise(light_radiance) * n.dot(l).max(0.);
     }
 
-    fn pdf(&self, geometric_normal: Vector3<f32>, v: Vector3<f32>, l: Vector3<f32>) -> f32 { 
+    fn pdf(&self, geometric_normal: Vector3<f32>, v: Vector3<f32>, l: Vector3<f32>) -> f32 {
         // Use NDF of the Cook-Torrance Microfacet model as the PDF
         let halfway = (v + l).normalize();
         let ndf = self.distribution_ggx(self.microfacet_normal, halfway); // TODO: try using geometric_normal instead of halfway
-        let weight =  self.microfacet_normal.dot(geometric_normal) / (4. * v.dot(self.microfacet_normal));
+        let weight =
+            self.microfacet_normal.dot(geometric_normal) / (4. * v.dot(self.microfacet_normal));
         let pdf = ndf * weight;
         return pdf;
-        
+
         // TODO: Note: We could simplify the BRDF by canceling the NDF term
     }
-
 
     fn get_ambient_occlusion(&self) -> Vector3<f32> {
         self.ambient_occlusion
     }
-
 }
 
 impl CookTorrance {
@@ -109,7 +104,7 @@ impl CookTorrance {
         // Generate uniform random variables between 0 and 1
         let r1: f32 = rand::random();
         let r2: f32 = rand::random();
-        
+
         // Compute spherical coordinates of the normal
         // Theta depends on the roughness according to the NDF (due to importance sampling on microfacet model)
         let theta = (((1. - r1) / (r1 * (a2 - 1.) + 1.)).sqrt()).acos();
@@ -122,12 +117,14 @@ impl CookTorrance {
         let y = theta.cos();
         let z = sin_theta * phi.sin();
         let microfacet_normal = Vector3::new(x, y, z).normalize();
-        
+
         return (transform_to_world(geometric_normal) * microfacet_normal).normalize();
     }
 
     fn fresnel_schlick(&self, cos_theta: f32) -> Vector3<f32> {
-        self.f0 + (Vector3::new(1. - self.f0.x, 1. - self.f0.y, 1. - self.f0.z)) * (1. - cos_theta).powi(5)
+        self.f0
+            + (Vector3::new(1. - self.f0.x, 1. - self.f0.y, 1. - self.f0.z))
+                * (1. - cos_theta).powi(5)
     }
 
     fn geometry_schlick_ggx(&self, n_dot_v: f32, k: f32) -> f32 {
@@ -138,7 +135,7 @@ impl CookTorrance {
     }
 
     fn geometry_smith(&self, n: Vector3<f32>, v: Vector3<f32>, l: Vector3<f32>) -> f32 {
-        let a = self.roughness;// * self.roughness;
+        let a = self.roughness; // * self.roughness;
         let k = (a + 1.).powi(2) / 8.;
         let n_dot_v = n.dot(v).max(0.);
         let n_dot_l = n.dot(l).max(0.);
@@ -161,11 +158,13 @@ impl CookTorrance {
         return num / denom;
     }
 
-    fn compute_ambient_occlusion(albedo: Vector3<f32>, ambient_occlusion: Option<f32>) -> Vector3<f32> {
+    fn compute_ambient_occlusion(
+        albedo: Vector3<f32>,
+        ambient_occlusion: Option<f32>,
+    ) -> Vector3<f32> {
         if let Some(ambient_occlusion) = ambient_occlusion {
             0.03 * ambient_occlusion * albedo
-        }
-        else {
+        } else {
             Zero::zero()
         }
     }

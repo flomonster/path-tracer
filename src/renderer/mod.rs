@@ -1,4 +1,7 @@
 pub mod brdf;
+mod material_sample;
+
+pub use material_sample::MaterialSample;
 
 use crate::Scene;
 use cgmath::*;
@@ -9,11 +12,11 @@ use std::sync::{Arc, Mutex};
 use crate::scene::model::Model;
 use crate::utils::{Hit, Intersectable, Ray};
 use crate::Config;
+use brdf::Brdf;
 use easy_gltf::Light;
 use rayon::ThreadPoolBuilder;
 use std::f32::consts::PI;
 use std::time::Instant;
-use brdf::Brdf;
 
 pub struct Renderer {
     width: u32,
@@ -79,7 +82,8 @@ impl Renderer {
                         let ray = Ray::new(scene.camera.position(), ray_dir);
 
                         // Compute pixel color
-                        let color = Self::render_pixel::<B>(scene, &ray, self.bounces, self.samples);
+                        let color =
+                            Self::render_pixel::<B>(scene, &ray, self.bounces, self.samples);
                         // Convert Vector3 into Rgb
                         let color = Rgb::from([
                             (color.x * 255.) as u8,
@@ -107,7 +111,12 @@ impl Renderer {
     }
 
     /// Render the color of a pixel given a ray and the scene
-    fn render_pixel<B: Brdf>(scene: &Scene, ray: &Ray, bounces: usize, samples: usize) -> Vector3<f32> {
+    fn render_pixel<B: Brdf>(
+        scene: &Scene,
+        ray: &Ray,
+        bounces: usize,
+        samples: usize,
+    ) -> Vector3<f32> {
         match Self::ray_cast(scene, ray) {
             None => Vector3::new(0., 0., 0.),
             Some((hit, model)) => Self::radiance::<B>(scene, model, &hit, ray, bounces, samples),
@@ -142,10 +151,11 @@ impl Renderer {
             hit.normal
         };
 
-        let brdf = B::new(&model.material, hit.tex_coords, n);
+        let material_sample = MaterialSample::new(&model.material, hit.tex_coords);
+        let brdf = B::new(&material_sample, n);
 
         let v = -1. * ray_in.direction;
-        
+
         // Direct Light computation
         let mut direct_radiance = Vector3::zero();
         for light in scene.lights.iter() {
@@ -163,16 +173,20 @@ impl Renderer {
         if bounces > 0 {
             for _ in 0..samples {
                 let ray_bounce_dir = brdf.sample(v);
-                let ray_bounce = Ray::new(hit.position + hit.normal * Self::NORMAL_BIAS, ray_bounce_dir);
+                let ray_bounce = Ray::new(
+                    hit.position + hit.normal * Self::NORMAL_BIAS,
+                    ray_bounce_dir,
+                );
 
-                let light_radiance = Self::render_pixel::<B>(scene, &ray_bounce, bounces - 1, samples);
+                let light_radiance =
+                    Self::render_pixel::<B>(scene, &ray_bounce, bounces - 1, samples);
 
                 let l = ray_bounce_dir;
                 let sample_radiance = brdf.eval(n, v, l, light_radiance);
-                
+
                 let pdf = brdf.pdf(n, v, l);
                 let weighted_sample_radiance = sample_radiance / pdf;
-                
+
                 indirect_radiance += weighted_sample_radiance;
             }
             indirect_radiance /= samples as f32;
