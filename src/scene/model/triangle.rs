@@ -124,7 +124,7 @@ impl BoundingBox for Triangle {
                 .max(self[1].position.z)
                 .max(self[2].position.z),
         );
-        AABB(min, max)
+        [min, max]
     }
 }
 
