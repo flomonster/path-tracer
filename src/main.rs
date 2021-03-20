@@ -13,6 +13,7 @@ use renderer::Renderer;
 use scene::Scene;
 use std::error::Error;
 use std::process::exit;
+use renderer::brdf::*;
 
 fn main() {
     match run() {
@@ -32,7 +33,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     // Send scene to Renderer
     let renderer = Renderer::new(&config);
-    let rendered_image = renderer.render(&scene);
+    let rendered_image = renderer.render::<CookTorrance>(&scene);
 
     // Save image
     rendered_image.save(config.output)?;
@@ -51,7 +52,7 @@ mod tests {
         let mut config = Config::default();
         config.input = PathBuf::from(path.as_ref());
         let scene = Scene::load(&config).unwrap();
-        Renderer::new(&config).render(&scene);
+        Renderer::new(&config).render::<CookTorrance>(&scene);
     }
 
     #[test]
