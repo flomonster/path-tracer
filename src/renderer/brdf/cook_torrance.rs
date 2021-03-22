@@ -49,7 +49,6 @@ impl Brdf for CookTorrance {
 
     fn sample(&self, v: Vector3<f32>) -> Vector3<f32> {
         // Compute direction by reflecting v about the microfacet normal
-        //let sample_dir = 2. * (v.dot(self.microfacet_normal)).max(0.) * self.microfacet_normal - v;
         let sample_dir = reflection(&v, &self.microfacet_normal);
         return sample_dir.normalize();
     }

@@ -30,21 +30,17 @@ pub trait Brdf: Default {
 
 // Transform any coordinate system to world coordinates
 pub fn transform_to_world(vec: Vector3<f32>, n: Vector3<f32>) -> Vector3<f32> {
-    // Find an axis that is not parallel to normal
-    let magic_number = 1. / f32::sqrt(3.);
-    let major_axis = if n.x.abs() < magic_number {
-        Vector3::<f32>::new(1., 0., 0.)
-    } else if n.y.abs() < magic_number {
-        Vector3::<f32>::new(0., 1., 0.)
-    } else {
-        Vector3::<f32>::new(0., 0., 1.)
+    let nt = if n.x.abs() > n.y.abs() {
+            Vector3::new(n.z, 0., -n.x) / (n.x * n.x + n.z * n.z).sqrt() 
+    }
+    else { 
+            Vector3::new(0., -n.z, n.y) / (n.y * n.y + n.z * n.z).sqrt()
     };
+    let nb = n.cross(nt); 
 
-    // Use majorAxis to create a coordinate system relative to world space
-    let u = n.cross(major_axis).normalize();
-    let v = n.cross(u);
-    let w = n;
-
-    // Transform from local coordinates to world coordinates
-    return u * vec.x + v * vec.y + w * vec.z;
+    Vector3::new(
+        vec.x * nb.x + vec.y * n.x + vec.z * nt.x, 
+        vec.x * nb.y + vec.y * n.y + vec.z * nt.y, 
+        vec.x * nb.z + vec.y * n.z + vec.z * nt.z
+    )
 }
