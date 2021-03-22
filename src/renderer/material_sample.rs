@@ -7,6 +7,7 @@ pub struct MaterialSample {
     pub roughness: f32,
     pub albedo: Vector3<f32>,
     pub ambient_occlusion: Option<f32>,
+    pub emissive: Vector3<f32>,
 }
 
 impl MaterialSample {
@@ -16,6 +17,7 @@ impl MaterialSample {
             roughness: material.get_roughness(tex_coords).max(0.0001), // roughness = 0 breaks the maths (in NDF function)
             albedo: material.get_base_color(tex_coords),
             ambient_occlusion: material.get_occlusion(tex_coords),
+            emissive: material.get_emissive(tex_coords),
         }
     }
 }
@@ -27,6 +29,7 @@ impl Default for MaterialSample {
             roughness: 0.,
             albedo: Zero::zero(),
             ambient_occlusion: None,
+            emissive: Zero::zero(),
         }
     }
 }

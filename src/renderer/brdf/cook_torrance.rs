@@ -10,6 +10,7 @@ pub struct CookTorrance {
     roughness: f32,
     albedo: Vector3<f32>,
     ambient_occlusion: Vector3<f32>,
+    emissive: Vector3<f32>,
     f0: Vector3<f32>, // surface reflection at zero incidence from Fresnel-Schlick approximation
     microfacet_normal: Vector3<f32>, // a.k.a. Wm
 }
@@ -20,6 +21,7 @@ impl Default for CookTorrance {
             metalness: 0.,
             roughness: 0.,
             albedo: Zero::zero(),
+            emissive: Zero::zero(),
             ambient_occlusion: Zero::zero(),
             f0: Zero::zero(),
             microfacet_normal: Zero::zero(),
@@ -33,6 +35,7 @@ impl Brdf for CookTorrance {
             metalness: material.metalness,
             roughness: material.roughness,
             albedo: material.albedo,
+            emissive: material.emissive,
             ambient_occlusion: Self::compute_ambient_occlusion(
                 material.albedo,
                 material.ambient_occlusion,
@@ -75,7 +78,7 @@ impl Brdf for CookTorrance {
         // Diffuse
         let diffuse = self.compute_diffuse(f, geometric_normal, light_direction, light_radiance);
 
-        return diffuse + specular;
+        return diffuse + specular + self.emissive;
     }
 
     fn eval_indirect(
@@ -107,7 +110,7 @@ impl Brdf for CookTorrance {
         // Diffuse
         let diffuse = self.compute_diffuse(f, geometric_normal, light_direction, light_radiance);
 
-        return diffuse + specular;
+        return diffuse + specular + self.emissive;
     }
 
     fn pdf(&self) -> f32 {
