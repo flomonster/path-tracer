@@ -3,6 +3,7 @@ use crate::renderer::brdf::Brdf;
 use crate::renderer::MaterialSample;
 use cgmath::*;
 use std::f32::consts::PI;
+use crate::utils::reflection;
 
 pub struct CookTorrance {
     metalness: f32,
@@ -28,59 +29,51 @@ impl Default for CookTorrance {
 
 impl Brdf for CookTorrance {
     fn new(material: &MaterialSample, geometric_normal: Vector3<f32>) -> Self {
+        let roughness = material.roughness.max(0.0001); // roughness = 0 breaks the maths (in NDF function)
+
         Self {
             metalness: material.metalness,
-            roughness: material.roughness,
+            roughness,
             albedo: material.albedo,
             ambient_occlusion: Self::compute_ambient_occlusion(
                 material.albedo,
                 material.ambient_occlusion,
             ),
             f0: Self::compute_f0(material.metalness, material.albedo),
-            microfacet_normal: Self::brdf_get_microfacet_normal(
+            microfacet_normal: Self::compute_microfacet_normal(
                 geometric_normal,
-                material.roughness,
+                roughness,
             ),
         }
     }
 
     fn sample(&self, v: Vector3<f32>) -> Vector3<f32> {
         // Compute direction by reflecting v about the microfacet normal
-        let sample_dir = 2. * v.dot(self.microfacet_normal) * self.microfacet_normal - v;
-        // TODO: try using 'reflection' function from utils
+        //let sample_dir = 2. * (v.dot(self.microfacet_normal)).max(0.) * self.microfacet_normal - v;
+        let sample_dir = reflection(&v, &self.microfacet_normal);
         return sample_dir.normalize();
     }
 
-    // Cook-Torrance specular BRDF
-    fn eval(
-        &self,
+    fn eval_direct(&self,
         geometric_normal: Vector3<f32>,
         view_direction: Vector3<f32>,  // from hit point to the viewer
         light_direction: Vector3<f32>, // from hit point to the light
-        light_radiance: Vector3<f32>,
+        light_radiance: Vector3<f32>    
     ) -> Vector3<f32> {
-        let n = geometric_normal;
-        let v = view_direction;
-        let l = light_direction;
-
-        let halfway = (v + l).normalize();
-
-        // TODO: try using microfacet_normal instead of geometric_normal
-        let d = self.distribution_ggx(n, halfway);
-        let f = self.fresnel_schlick(halfway.dot(v).max(0.));
-        let g = self.geometry_smith(n, v, l);
-
-        // Specular
-        let specular = (d * f * g) / (4. * n.dot(v).max(0.) * n.dot(l).max(0.)).max(0.001);
-
-        // Diffuse
-        let kd = Vector3::new(1. - f.x, 1. - f.y, 1. - f.z) * (1. - self.metalness);
-        let diffuse = kd.mul_element_wise(self.albedo) / PI;
-
-        return (diffuse + specular).mul_element_wise(light_radiance) * n.dot(l).max(0.);
+        return self.eval(geometric_normal, view_direction, light_direction, light_radiance, true);
     }
 
-    fn pdf(&self, geometric_normal: Vector3<f32>, v: Vector3<f32>, l: Vector3<f32>) -> f32 {
+    fn eval_indirect(&self,
+        geometric_normal: Vector3<f32>,
+        view_direction: Vector3<f32>, // from hit point to the viewer
+        light_direction: Vector3<f32>, // from hit point to the light
+        light_radiance: Vector3<f32>    
+    ) -> Vector3<f32> {
+        return self.eval(geometric_normal, view_direction, light_direction, light_radiance, false);
+    }
+
+    fn pdf(&self, geometric_normal: Vector3<f32>, v: Vector3<f32>, l: Vector3<f32>) -> f32 { 
+        /*
         // Use NDF of the Cook-Torrance Microfacet model as the PDF
         let halfway = (v + l).normalize();
         let ndf = self.distribution_ggx(self.microfacet_normal, halfway); // TODO: try using geometric_normal instead of halfway
@@ -88,8 +81,10 @@ impl Brdf for CookTorrance {
             self.microfacet_normal.dot(geometric_normal) / (4. * v.dot(self.microfacet_normal));
         let pdf = ndf * weight;
         return pdf;
+        */
 
-        // TODO: Note: We could simplify the BRDF by canceling the NDF term
+        // We simplify the PDF by canceling the NDF term in the BRDF
+        return 1.;
     }
 
     fn get_ambient_occlusion(&self) -> Vector3<f32> {
@@ -98,7 +93,50 @@ impl Brdf for CookTorrance {
 }
 
 impl CookTorrance {
-    fn brdf_get_microfacet_normal(geometric_normal: Vector3<f32>, roughness: f32) -> Vector3<f32> {
+
+    fn eval(&self,
+        geometric_normal: Vector3<f32>,
+        view_direction: Vector3<f32>, // from hit point to the viewer
+        light_direction: Vector3<f32>, // from hit point to the light
+        light_radiance: Vector3<f32>,
+        is_direct_lighting: bool
+    ) -> Vector3<f32> {
+        
+        let n = geometric_normal;
+        let v = view_direction;
+        let l = light_direction;
+
+        let halfway = (v + l).normalize();
+        let f = self.fresnel_schlick(halfway.dot(v).max(0.)); //l.dot(self.microfacet_normal).max(0.)
+        let g = self.geometry_smith(n, v, l);
+
+        // Specular
+        let mut specular = Zero::zero();
+        if is_direct_lighting {
+            let d = self.distribution_ggx(n, halfway);
+
+            specular = (d * f * g) / (4. * n.dot(v).max(0.) * n.dot(l).max(0.)).max(0.0001);
+            specular = specular.mul_element_wise(light_radiance) * n.dot(l).max(0.);
+        }
+        else {
+            if n.dot(l) > 0. && l.dot(self.microfacet_normal) > 0. {
+                // NDF is canceled by PDF
+                let weight = v.dot(self.microfacet_normal).abs() / (v.dot(n).abs() * self.microfacet_normal.dot(n).abs());
+                
+                specular = f * g * weight;
+                specular = specular.mul_element_wise(light_radiance); // cosine factor is canceled by PDF
+            }
+        }
+
+        // Diffuse
+        let kd = Vector3::new(1. - f.x, 1. - f.y, 1. - f.z) * (1. - self.metalness);
+        let mut diffuse = kd.mul_element_wise(self.albedo) / PI;
+        diffuse = diffuse.mul_element_wise(light_radiance) * n.dot(l).max(0.);
+
+        return diffuse + specular;
+    }
+
+    fn compute_microfacet_normal(geometric_normal: Vector3<f32>, roughness: f32) -> Vector3<f32> {
         let a = roughness * roughness;
         let a2 = a * a;
         // Generate uniform random variables between 0 and 1
@@ -117,8 +155,8 @@ impl CookTorrance {
         let y = theta.cos();
         let z = sin_theta * phi.sin();
         let microfacet_normal = Vector3::new(x, y, z).normalize();
-
-        return (transform_to_world(geometric_normal) * microfacet_normal).normalize();
+        
+        return transform_to_world(microfacet_normal, geometric_normal).normalize();
     }
 
     fn fresnel_schlick(&self, cos_theta: f32) -> Vector3<f32> {
@@ -135,13 +173,13 @@ impl CookTorrance {
     }
 
     fn geometry_smith(&self, n: Vector3<f32>, v: Vector3<f32>, l: Vector3<f32>) -> f32 {
-        let a = self.roughness; // * self.roughness;
-        let k = (a + 1.).powi(2) / 8.;
+        let a = self.roughness;// * self.roughness;
         let n_dot_v = n.dot(v).max(0.);
         let n_dot_l = n.dot(l).max(0.);
+
+        let k = (a + 1.).powi(2) / 8.;
         let ggx1 = self.geometry_schlick_ggx(n_dot_v, k);
         let ggx2 = self.geometry_schlick_ggx(n_dot_l, k);
-
         return ggx1 * ggx2;
     }
 

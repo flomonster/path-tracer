@@ -165,7 +165,7 @@ impl Renderer {
             }
 
             let l = -1. * light_direction;
-            direct_radiance += brdf.eval(n, v, l, light_radiance);
+            direct_radiance += brdf.eval_direct(n, v, l, light_radiance);
         }
 
         // Indirect light computation
@@ -182,8 +182,8 @@ impl Renderer {
                     Self::render_pixel::<B>(scene, &ray_bounce, bounces - 1, samples);
 
                 let l = ray_bounce_dir;
-                let sample_radiance = brdf.eval(n, v, l, light_radiance);
-
+                let sample_radiance = brdf.eval_indirect(n, v, l, light_radiance);
+                
                 let pdf = brdf.pdf(n, v, l);
                 let weighted_sample_radiance = sample_radiance / pdf;
 

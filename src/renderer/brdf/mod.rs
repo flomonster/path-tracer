@@ -9,8 +9,14 @@ pub trait Brdf: Default {
 
     fn sample(&self, v: Vector3<f32>) -> Vector3<f32>;
 
-    fn eval(
-        &self,
+    fn eval_direct(&self,
+        geometric_normal: Vector3<f32>,
+        view_direction: Vector3<f32>, // from hit point to the viewer
+        light_direction: Vector3<f32>, // from hit point to the light
+        light_radiance: Vector3<f32>    
+    ) -> Vector3<f32>;
+
+    fn eval_indirect(&self,
         geometric_normal: Vector3<f32>,
         view_direction: Vector3<f32>,  // from hit point to the viewer
         light_direction: Vector3<f32>, // from hit point to the light
@@ -23,15 +29,22 @@ pub trait Brdf: Default {
 }
 
 // Transform any coordinate system to world coordinates
-pub fn transform_to_world(n: Vector3<f32>) -> Matrix3<f32> {
-    // Create a local coordinate system (n, nb, nt) oriented along the normal
-    let nt = if n.x.abs() > n.y.abs() {
-        Vector3::new(n.z, 0., -n.x) / (n.x * n.x + n.z * n.z).sqrt()
+pub fn transform_to_world(vec: Vector3<f32>, n: Vector3<f32>) -> Vector3<f32> {
+    // Find an axis that is not parallel to normal
+    let magic_number = 1. / f32::sqrt(3.);
+    let major_axis = if n.x.abs() < magic_number {
+        Vector3::<f32>::new(1., 0., 0.)
+    } else if n.y.abs() < magic_number {
+        Vector3::<f32>::new(0., 1., 0.)
     } else {
-        Vector3::new(0., -n.z, n.y) / (n.y * n.y + n.z * n.z).sqrt()
+        Vector3::<f32>::new(0., 0., 1.)
     };
-    let nb = n.cross(nt);
 
-    // Return the transformation matrix
-    return Matrix3::new(nb.x, n.x, nt.x, nb.y, n.y, nt.y, nb.z, n.z, nt.z);
+    // Use majorAxis to create a coordinate system relative to world space
+    let u = n.cross(major_axis).normalize();
+    let v = n.cross(u);
+    let w = n;
+
+    // Transform from local coordinates to world coordinates
+    return u * vec.x + v * vec.y + w * vec.z;
 }
