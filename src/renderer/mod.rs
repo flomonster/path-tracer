@@ -183,9 +183,8 @@ impl Renderer {
 
                 let l = ray_bounce_dir;
                 let sample_radiance = brdf.eval_indirect(n, v, l, light_radiance);
-                
-                let pdf = brdf.pdf(n, v, l);
-                let weighted_sample_radiance = sample_radiance / pdf;
+
+                let weighted_sample_radiance = sample_radiance / brdf.pdf();
 
                 indirect_radiance += weighted_sample_radiance;
             }

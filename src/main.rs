@@ -9,11 +9,11 @@ mod utils;
 pub use config::Config;
 
 use clap::App;
+use renderer::brdf::*;
 use renderer::Renderer;
 use scene::Scene;
 use std::error::Error;
 use std::process::exit;
-use renderer::brdf::*;
 
 fn main() {
     match run() {

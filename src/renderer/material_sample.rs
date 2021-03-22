@@ -13,7 +13,7 @@ impl MaterialSample {
     pub fn new(material: &Arc<Material>, tex_coords: Vector2<f32>) -> Self {
         Self {
             metalness: material.get_metallic(tex_coords),
-            roughness: material.get_roughness(tex_coords),
+            roughness: material.get_roughness(tex_coords).max(0.0001), // roughness = 0 breaks the maths (in NDF function)
             albedo: material.get_base_color(tex_coords),
             ambient_occlusion: material.get_occlusion(tex_coords),
         }
