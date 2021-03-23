@@ -1,4 +1,6 @@
 mod hit;
+#[allow(dead_code)]
+pub mod logger;
 mod ray;
 
 pub use hit::Hit;
