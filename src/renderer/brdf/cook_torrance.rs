@@ -30,7 +30,7 @@ impl Default for CookTorrance {
 }
 
 impl Brdf for CookTorrance {
-    fn new(material: &MaterialSample, geometric_normal: Vector3<f32>) -> Self {
+    fn new(material: &MaterialSample) -> Self {
         Self {
             metalness: material.metalness,
             roughness: material.roughness,
@@ -41,14 +41,14 @@ impl Brdf for CookTorrance {
                 material.ambient_occlusion,
             ),
             f0: Self::compute_f0(material.metalness, material.albedo),
-            microfacet_normal: Self::compute_microfacet_normal(
-                geometric_normal,
-                material.roughness,
-            ),
+            microfacet_normal: Zero::zero(),
         }
     }
 
-    fn sample(&self, v: Vector3<f32>) -> Vector3<f32> {
+    fn sample(&mut self, geometric_normal: Vector3<f32>, v: Vector3<f32>) -> Vector3<f32> {
+        // Compute a new random microfacet normal
+        self.compute_microfacet_normal(geometric_normal);
+
         // Compute direction by reflecting v about the microfacet normal
         let sample_dir = reflection(&v, &self.microfacet_normal);
         return sample_dir.normalize();
@@ -63,7 +63,7 @@ impl Brdf for CookTorrance {
     ) -> Vector3<f32> {
         let halfway = (view_direction + light_direction).normalize();
         let d = self.distribution_ggx(geometric_normal, halfway);
-        let f = self.fresnel_schlick(halfway.dot(view_direction).max(0.)); //l.dot(self.microfacet_normal).max(0.)
+        let f = self.fresnel_schlick(halfway.dot(view_direction).max(0.));
         let g = self.geometry_smith(geometric_normal, view_direction, light_direction);
 
         // Specular
@@ -96,14 +96,13 @@ impl Brdf for CookTorrance {
         let specular = if geometric_normal.dot(light_direction) > 0.
             && light_direction.dot(self.microfacet_normal) > 0.
         {
-            // Ensure our sample is in the upper hemisphere
-            // NDF is canceled by PDF
             let weight_num = view_direction.dot(self.microfacet_normal).abs();
             let weight_denom = view_direction.dot(geometric_normal).abs()
                 * self.microfacet_normal.dot(geometric_normal).abs();
             let weight = weight_num / weight_denom;
-            (f * g * weight).mul_element_wise(light_radiance) // cosine factor is canceled by PDF
+            (f * g * weight).mul_element_wise(light_radiance) // NDF and cosine factor are canceled by PDF
         } else {
+            // If our sample is not in the upper hemisphere
             Zero::zero()
         };
 
@@ -126,19 +125,19 @@ impl Brdf for CookTorrance {
 impl CookTorrance {
     fn compute_diffuse(
         &self,
-        fresnel: Vector3<f32>,
+        ks: Vector3<f32>, // specular ratio, equivalent to fresnel ratio in Cook Torrance
         geometric_normal: Vector3<f32>,
         light_direction: Vector3<f32>,
         light_radiance: Vector3<f32>,
     ) -> Vector3<f32> {
         let kd =
-            Vector3::new(1. - fresnel.x, 1. - fresnel.y, 1. - fresnel.z) * (1. - self.metalness);
+            Vector3::new(1. - ks.x, 1. - ks.y, 1. - ks.z) * (1. - self.metalness);
         let diffuse = kd.mul_element_wise(self.albedo) / PI;
         diffuse.mul_element_wise(light_radiance) * geometric_normal.dot(light_direction).max(0.)
     }
 
-    fn compute_microfacet_normal(geometric_normal: Vector3<f32>, roughness: f32) -> Vector3<f32> {
-        let a = roughness * roughness;
+    fn compute_microfacet_normal(&mut self, geometric_normal: Vector3<f32>) {
+        let a = self.roughness * self.roughness;
         let a2 = a * a;
         // Generate uniform random variables between 0 and 1
         let r1: f32 = rand::random();
@@ -157,7 +156,7 @@ impl CookTorrance {
         let z = sin_theta * phi.sin();
         let microfacet_normal = Vector3::new(x, y, z).normalize();
 
-        return transform_to_world(microfacet_normal, geometric_normal).normalize();
+        self.microfacet_normal = transform_to_world(microfacet_normal, geometric_normal).normalize();
     }
 
     fn fresnel_schlick(&self, cos_theta: f32) -> Vector3<f32> {

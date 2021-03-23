@@ -152,7 +152,7 @@ impl Renderer {
         };
 
         let material_sample = MaterialSample::new(&model.material, hit.tex_coords);
-        let brdf = B::new(&material_sample, n);
+        let mut brdf = B::new(&material_sample);
 
         let v = -1. * ray_in.direction;
 
@@ -172,7 +172,7 @@ impl Renderer {
         let mut indirect_radiance = Vector3::zero();
         if bounces > 0 {
             for _ in 0..samples {
-                let ray_bounce_dir = brdf.sample(v);
+                let ray_bounce_dir = brdf.sample(n, v);
                 let ray_bounce = Ray::new(
                     hit.position + hit.normal * Self::NORMAL_BIAS,
                     ray_bounce_dir,

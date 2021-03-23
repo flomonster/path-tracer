@@ -5,9 +5,9 @@ use cgmath::*;
 pub use cook_torrance::CookTorrance;
 
 pub trait Brdf: Default {
-    fn new(material: &MaterialSample, geometric_normal: Vector3<f32>) -> Self;
+    fn new(material: &MaterialSample) -> Self;
 
-    fn sample(&self, v: Vector3<f32>) -> Vector3<f32>;
+    fn sample(&mut self, geometric_normal: Vector3<f32>, v: Vector3<f32>) -> Vector3<f32>;
 
     fn eval_direct(
         &self,
