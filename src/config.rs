@@ -1,8 +1,10 @@
+use crate::renderer::brdf::BrdfType;
 use cgmath::*;
 use clap::ArgMatches;
 use std::error::Error;
 use std::fmt;
 use std::path::PathBuf;
+use strum::IntoEnumIterator;
 
 #[derive(Clone, Debug)]
 pub struct Config {
@@ -12,6 +14,7 @@ pub struct Config {
     pub quiet: bool,
     pub bounces: usize,
     pub samples: usize,
+    pub brdf_type: BrdfType,
 }
 
 impl Config {
@@ -38,21 +41,27 @@ impl Config {
         );
 
         // Apply bounces
-        if let Ok(bounces) = args.value_of("bounces").unwrap().parse() {
+        let bounces = args.value_of("bounces").unwrap().to_string();
+        if let Ok(bounces) = bounces.parse() {
             config.bounces = bounces;
         } else {
-            return Err(Box::new(ConfigError::InvalidBounces(
-                args.value_of("bounces").unwrap().to_string(),
-            )));
+            return Err(Box::new(ConfigError::InvalidBounces(bounces)));
         }
 
         // Apply samples
-        if let Ok(samples) = args.value_of("samples").unwrap().parse() {
+        let samples = args.value_of("samples").unwrap().to_string();
+        if let Ok(samples) = samples.parse() {
             config.samples = samples;
         } else {
-            return Err(Box::new(ConfigError::InvalidSamples(
-                args.value_of("samples").unwrap().to_string(),
-            )));
+            return Err(Box::new(ConfigError::InvalidSamples(samples)));
+        }
+
+        // Apply brdf
+        let brdf_type = args.value_of("brdf").unwrap().to_string();
+        if let Ok(brdf_type) = brdf_type.to_uppercase().parse() {
+            config.brdf_type = brdf_type;
+        } else {
+            return Err(Box::new(ConfigError::InvalidBRDF(brdf_type)));
         }
 
         // Apply other options and parameters
@@ -73,6 +82,7 @@ impl Default for Config {
             quiet: true,
             bounces: 2,
             samples: 16,
+            brdf_type: BrdfType::CookTorrance,
         }
     }
 }
@@ -82,6 +92,7 @@ enum ConfigError {
     InvalidResolution(String),
     InvalidBounces(String),
     InvalidSamples(String),
+    InvalidBRDF(String),
 }
 
 impl fmt::Display for ConfigError {
@@ -102,6 +113,13 @@ impl fmt::Display for ConfigError {
                 "Invalid samples: '{}'\nExample of valid number of samples: '16'",
                 value
             ),
+            ConfigError::InvalidBRDF(value) => {
+                writeln!(f, "Invalid brdf: '{}'\nValid brdf are:'", value)?;
+                for brdf_type in BrdfType::iter() {
+                    writeln!(f, "  - {}", brdf_type.to_string())?;
+                }
+                Ok(())
+            }
         }
     }
 }

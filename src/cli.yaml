@@ -27,3 +27,7 @@ args:
          short: s
          default_value: "16"
          help: Number of samples to render for each pixel
+    - brdf:
+         long: brdf
+         default_value: "COOK_TORRANCE"
+         help: Select the brdf used to render the scene

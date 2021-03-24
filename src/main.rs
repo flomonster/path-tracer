@@ -9,7 +9,6 @@ mod utils;
 pub use config::Config;
 
 use clap::App;
-use renderer::brdf::*;
 use renderer::Renderer;
 use scene::Scene;
 use std::error::Error;
@@ -33,7 +32,7 @@ fn run() -> Result<(), Box<dyn Error>> {
 
     // Send scene to Renderer
     let renderer = Renderer::new(&config);
-    let rendered_image = renderer.render::<CookTorrance>(&scene);
+    let rendered_image = renderer.render(&scene);
 
     // Save image
     rendered_image.save(config.output)?;

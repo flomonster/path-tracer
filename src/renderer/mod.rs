@@ -12,7 +12,7 @@ use std::sync::{Arc, Mutex};
 use crate::scene::model::Model;
 use crate::utils::{Hit, Intersectable, Ray};
 use crate::Config;
-use brdf::Brdf;
+use brdf::*;
 use easy_gltf::Light;
 use rayon::ThreadPoolBuilder;
 use std::f32::consts::PI;
@@ -24,6 +24,7 @@ pub struct Renderer {
     quiet: bool,
     samples: usize,
     bounces: usize,
+    brdf_type: BrdfType,
 }
 
 impl Renderer {
@@ -38,11 +39,18 @@ impl Renderer {
             quiet: config.quiet,
             samples: config.samples,
             bounces: config.bounces,
+            brdf_type: config.brdf_type.clone(),
         }
     }
 
     /// Render a scene
-    pub fn render<B: Brdf>(&self, scene: &Scene) -> RgbImage {
+    pub fn render(&self, scene: &Scene) -> RgbImage {
+        match self.brdf_type {
+            BrdfType::CookTorrance => self.render_with_brdf::<CookTorrance>(scene),
+        }
+    }
+
+    fn render_with_brdf<B: Brdf>(&self, scene: &Scene) -> RgbImage {
         let image = Arc::new(Mutex::new(RgbImage::new(self.width, self.height)));
 
         // Save f32 cast of resolution
