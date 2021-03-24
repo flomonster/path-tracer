@@ -1,4 +1,5 @@
 pub mod brdf;
+mod tonemap;
 mod material_sample;
 
 pub use material_sample::MaterialSample;
@@ -13,6 +14,7 @@ use crate::scene::model::Model;
 use crate::utils::{Hit, Intersectable, Ray};
 use crate::Config;
 use brdf::*;
+use tonemap::*;
 use easy_gltf::Light;
 use rayon::ThreadPoolBuilder;
 use std::f32::consts::PI;
@@ -92,12 +94,8 @@ impl Renderer {
                         // Compute pixel color
                         let color =
                             Self::render_pixel::<B>(scene, &ray, self.bounces, self.samples);
-                        // Convert Vector3 into Rgb
-                        let color = Rgb::from([
-                            (color.x * 255.) as u8,
-                            (color.y * 255.) as u8,
-                            (color.z * 255.) as u8,
-                        ]);
+                        
+                        let color = self.post_processing(color);
 
                         // Set pixel color into image
                         image.lock().unwrap()[(x, y)] = color;
@@ -199,16 +197,9 @@ impl Renderer {
             indirect_radiance /= samples as f32;
         }
 
+        // Combine diffuse, specular, AO
         let mut radiance = direct_radiance + indirect_radiance;
         radiance += brdf.get_ambient_occlusion();
-
-        // HDR
-        radiance = radiance.div_element_wise(radiance + Vector3::new(1., 1., 1.));
-        radiance = Vector3::new(
-            radiance.x.powf(1. / 2.2),
-            radiance.y.powf(1. / 2.2),
-            radiance.z.powf(1. / 2.2),
-        );
 
         radiance
     }
@@ -274,5 +265,25 @@ impl Renderer {
             }
             _ => unimplemented!("Light not implemented: {:?}", light),
         }
+    }
+
+    fn post_processing(&self, color: Vector3<f32>) -> Rgb<u8> {
+        // HDR
+        let color = tonemap(TonemapType::Aces, color);
+                        
+        // Gamma correction
+        let gamma = 2.2;
+        let color = Vector3::new(
+            color.x.powf(1. / gamma),
+            color.y.powf(1. / gamma),
+            color.z.powf(1. / gamma),
+        );
+        
+        // Convert Vector3 into Rgb
+        Rgb::from([
+            (color.x * 255.) as u8,
+            (color.y * 255.) as u8,
+            (color.z * 255.) as u8,
+        ])
     }
 }
