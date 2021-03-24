@@ -123,6 +123,7 @@ impl Brdf for CookTorrance {
 }
 
 impl CookTorrance {
+    // Lambertian diffuse
     fn compute_diffuse(
         &self,
         ks: Vector3<f32>, // specular ratio, equivalent to fresnel ratio in Cook Torrance
