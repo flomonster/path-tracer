@@ -28,7 +28,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     let yaml = load_yaml!("cli.yaml");
     let config = Config::load(&App::from_yaml(yaml).get_matches())?;
 
-    let scene = Scene::load(&config)?;
+    let scene = Scene::load(&config.input)?;
 
     // Send scene to Renderer
     let renderer = Renderer::new(&config);

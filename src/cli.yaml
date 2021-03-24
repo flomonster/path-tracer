@@ -2,11 +2,17 @@ name: path-tracer
 version: "1.0"
 about: Path-trace awesome things
 args:
+    - config:
+        long: config
+        short: c
+        takes_value: true
+        help: A path to the yaml file containing all the configuration information
     - INPUT:
-        required: true
         help: Input file name GLTF format
-    - OUTPUT:
-        required: true
+    - output:
+        long: output
+        short: o
+        default_value: "render.png"
         help: Output image name
     - resolution:
         short: r
@@ -17,17 +23,3 @@ args:
         long: quiet
         short: q
         help: No progress bar printed
-    - bounces:
-         long: bounces
-         short: b
-         default_value: "2"
-         help: Maximum number of bounces of a light ray
-    - samples:
-         long: samples
-         short: s
-         default_value: "16"
-         help: Number of samples to render for each pixel
-    - brdf:
-         long: brdf
-         default_value: "COOK_TORRANCE"
-         help: Select the brdf used to render the scene

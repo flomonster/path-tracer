@@ -6,6 +6,7 @@ use kdtree_ray::*;
 use model::Model;
 use rayon::prelude::*;
 use std::error::Error;
+use std::path::Path;
 
 #[derive(Debug, Clone)]
 pub struct Scene {
@@ -15,8 +16,8 @@ pub struct Scene {
 }
 
 impl Scene {
-    pub fn load(config: &crate::Config) -> Result<Scene, Box<dyn Error>> {
-        let scenes = easy_gltf::load(&config.input)?;
+    pub fn load<P: AsRef<Path>>(path: P) -> Result<Scene, Box<dyn Error>> {
+        let scenes = easy_gltf::load(path)?;
 
         if scenes.is_empty() {
             // TODO: Return error instead
