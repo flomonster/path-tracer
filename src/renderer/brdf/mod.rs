@@ -3,7 +3,7 @@ mod cook_torrance;
 use super::MaterialSample;
 use cgmath::*;
 pub use cook_torrance::CookTorrance;
-use strum_macros::{Display, EnumIter, EnumString};
+use serde::Deserialize;
 
 pub trait Brdf: Default {
     fn new(material: &MaterialSample) -> Self;
@@ -47,8 +47,8 @@ pub fn transform_to_world(vec: Vector3<f32>, n: Vector3<f32>) -> Vector3<f32> {
     )
 }
 
-#[derive(EnumIter, EnumString, Display, Debug, Clone)]
+#[derive(Copy, Debug, Clone, Deserialize)]
 pub enum BrdfType {
-    #[strum(serialize = "COOK_TORRANCE")]
+    #[serde(rename = "COOK_TORRANCE")]
     CookTorrance,
 }

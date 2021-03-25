@@ -1,5 +1,6 @@
 pub mod brdf;
-mod tonemap;
+pub mod tonemap;
+
 mod material_sample;
 
 pub use material_sample::MaterialSample;
@@ -10,23 +11,19 @@ use image::{Rgb, RgbImage};
 use pbr::ProgressBar;
 use std::sync::{Arc, Mutex};
 
+use crate::config::*;
 use crate::scene::model::Model;
 use crate::utils::{Hit, Intersectable, Ray};
-use crate::Config;
 use brdf::*;
-use tonemap::*;
 use easy_gltf::Light;
 use rayon::ThreadPoolBuilder;
 use std::f32::consts::PI;
 use std::time::Instant;
+use tonemap::*;
 
 pub struct Renderer {
-    width: u32,
-    height: u32,
+    profile: Profile,
     quiet: bool,
-    samples: usize,
-    bounces: usize,
-    brdf_type: BrdfType,
 }
 
 impl Renderer {
@@ -36,36 +33,34 @@ impl Renderer {
     /// Create new raytracer given resolution
     pub fn new(config: &Config) -> Self {
         Renderer {
-            width: config.resolution.x,
-            height: config.resolution.y,
+            profile: config.profile,
             quiet: config.quiet,
-            samples: config.samples,
-            bounces: config.bounces,
-            brdf_type: config.brdf_type.clone(),
         }
     }
 
     /// Render a scene
     pub fn render(&self, scene: &Scene) -> RgbImage {
-        match self.brdf_type {
+        match self.profile.brdf {
             BrdfType::CookTorrance => self.render_with_brdf::<CookTorrance>(scene),
         }
     }
 
     fn render_with_brdf<B: Brdf>(&self, scene: &Scene) -> RgbImage {
-        let image = Arc::new(Mutex::new(RgbImage::new(self.width, self.height)));
+        let width = self.profile.resolution.width;
+        let height = self.profile.resolution.height;
+        let image = Arc::new(Mutex::new(RgbImage::new(width, height)));
 
         // Save f32 cast of resolution
-        let width = self.width as f32;
-        let height = self.height as f32;
+        let width_f = width as f32;
+        let height_f = height as f32;
 
-        let image_ratio = width / height;
+        let image_ratio = width_f / height_f;
 
         // Create progress bar (if quiet isn't activated)
         let pb = if self.quiet {
             None
         } else {
-            let mut pb = ProgressBar::new((self.width * self.height) as u64);
+            let mut pb = ProgressBar::new((width * height) as u64);
             pb.message("Rendering: ");
             Some(pb)
         };
@@ -76,15 +71,15 @@ impl Renderer {
         let now = Instant::now();
 
         pool.scope(|s| {
-            for x in 0..self.width {
-                for y in 0..self.height {
+            for x in 0..width {
+                for y in 0..height {
                     let image = image.clone();
                     let pb = pb.clone();
                     s.spawn(move |_| {
-                        let screen_x = (x as f32 + 0.5) / width * 2. - 1.;
+                        let screen_x = (x as f32 + 0.5) / width_f * 2. - 1.;
                         let screen_x = screen_x * Rad::tan(scene.camera.fov / 2.) * image_ratio;
 
-                        let screen_y = 1. - (y as f32 + 0.5) / height * 2.;
+                        let screen_y = 1. - (y as f32 + 0.5) / height_f * 2.;
                         let screen_y = screen_y * Rad::tan(scene.camera.fov / 2.);
 
                         let ray_dir = Vector3::new(screen_x, screen_y, -1.).normalize();
@@ -92,9 +87,13 @@ impl Renderer {
                         let ray = Ray::new(scene.camera.position(), ray_dir);
 
                         // Compute pixel color
-                        let color =
-                            Self::render_pixel::<B>(scene, &ray, self.bounces, self.samples);
-                        
+                        let color = Self::render_pixel::<B>(
+                            scene,
+                            &ray,
+                            self.profile.bounces,
+                            self.profile.samples,
+                        );
+
                         let color = self.post_processing(color);
 
                         // Set pixel color into image
@@ -269,8 +268,8 @@ impl Renderer {
 
     fn post_processing(&self, color: Vector3<f32>) -> Rgb<u8> {
         // HDR
-        let color = tonemap(TonemapType::Aces, color);
-                        
+        let color = tonemap(self.profile.tonemap, color);
+
         // Gamma correction
         let gamma = 2.2;
         let color = Vector3::new(
@@ -278,7 +277,7 @@ impl Renderer {
             color.y.powf(1. / gamma),
             color.z.powf(1. / gamma),
         );
-        
+
         // Convert Vector3 into Rgb
         Rgb::from([
             (color.x * 255.) as u8,
