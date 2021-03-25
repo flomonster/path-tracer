@@ -8,11 +8,11 @@
 </p>
 <hr>
 
-This project is an implementation of path tracer in **Rust**.
+This project is an implementation of Monte Carlo path tracing in **Rust**.
 
 ## How to use ?
 
-The renderer takes as input a scenes in **Gltf** format.
+The renderer takes as input a scene in **glTF** format.
 
 Minimal command line:
 
@@ -37,11 +37,12 @@ tonemap: FILMIC # Which color tone map to use
 
 ## Features
 
-- [x] Camera transform
 - [x] Parallel computation
-- [x] Multiple Tone mapping
-- [x] Importance sampling
+- [x] KD Tree
+- [x] Unidirectional Monte Carlo path tracing
 - [x] BRDF
+- [x] Importance sampling
+- [x] Various Tone mapping
 - [ ] BTDF
-- [ ] Bloom
+- [ ] BSSRDF
 - [ ] ...
