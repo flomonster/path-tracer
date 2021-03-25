@@ -6,9 +6,8 @@ mod renderer;
 mod scene;
 mod utils;
 
-pub use config::Config;
-
 use clap::App;
+use config::Config;
 use renderer::Renderer;
 use scene::Scene;
 use std::error::Error;
@@ -50,8 +49,8 @@ mod tests {
     {
         let mut config = Config::default();
         config.input = PathBuf::from(path.as_ref());
-        let scene = Scene::load(&config).unwrap();
-        Renderer::new(&config).render::<CookTorrance>(&scene);
+        let scene = Scene::load(&config.input).unwrap();
+        Renderer::new(&config).render(&scene);
     }
 
     #[test]

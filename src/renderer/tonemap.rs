@@ -1,13 +1,13 @@
-use strum_macros::{Display, EnumIter, EnumString};
 use cgmath::*;
+use serde::Deserialize;
 
-#[derive(EnumIter, EnumString, Display, Debug, Clone)]
+#[derive(Copy, Debug, Clone, Deserialize)]
 pub enum TonemapType {
-    #[strum(serialize = "REINHARD")]
+    #[serde(rename = "REINHARD")]
     Reinhard,
-    #[strum(serialize = "FILMIC")]
+    #[serde(rename = "FILMIC")]
     Filmic,
-    #[strum(serialize = "ACES")]
+    #[serde(rename = "ACES")]
     Aces,
 }
 
@@ -45,5 +45,9 @@ fn aces(color: Vector3<f32>) -> Vector3<f32> {
     let num = color.mul_element_wise(a * color + b);
     let denom = color.mul_element_wise(c * color + d) + e;
     let res = num.div_element_wise(denom);
-    Vector3::new(res.x.max(0.).min(1.), res.y.max(0.).min(1.), res.z.max(0.).min(1.))
+    Vector3::new(
+        res.x.max(0.).min(1.),
+        res.y.max(0.).min(1.),
+        res.z.max(0.).min(1.),
+    )
 }
