@@ -13,6 +13,7 @@ pub struct Profile {
     pub samples: usize,
     pub brdf: BrdfType,
     pub tonemap: TonemapType,
+    pub background_color: [f32; 3],
 }
 
 impl Profile {
@@ -30,6 +31,7 @@ impl Default for Profile {
             samples: 16,
             brdf: BrdfType::CookTorrance,
             tonemap: TonemapType::Filmic,
+            background_color: [0., 0., 0.],
         }
     }
 }
