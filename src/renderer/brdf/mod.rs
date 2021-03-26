@@ -5,9 +5,7 @@ use cgmath::*;
 pub use cook_torrance::CookTorrance;
 use serde::Deserialize;
 
-pub trait Brdf: Default {
-    fn new(material: &MaterialSample) -> Self;
-
+pub trait Brdf {
     fn sample(&mut self, geometric_normal: Vector3<f32>, v: Vector3<f32>) -> Vector3<f32>;
 
     fn eval_direct(
@@ -15,7 +13,6 @@ pub trait Brdf: Default {
         geometric_normal: Vector3<f32>,
         view_direction: Vector3<f32>,  // from hit point to the viewer
         light_direction: Vector3<f32>, // from hit point to the light
-        light_radiance: Vector3<f32>,
     ) -> Vector3<f32>;
 
     fn eval_indirect(
@@ -23,12 +20,9 @@ pub trait Brdf: Default {
         geometric_normal: Vector3<f32>,
         view_direction: Vector3<f32>,  // from hit point to the viewer
         light_direction: Vector3<f32>, // from hit point to the light
-        light_radiance: Vector3<f32>,
     ) -> Vector3<f32>;
 
     fn pdf(&self) -> f32;
-
-    fn get_ambient_occlusion(&self) -> Vector3<f32>;
 }
 
 // Transform any coordinate system to world coordinates
@@ -51,4 +45,10 @@ pub fn transform_to_world(vec: Vector3<f32>, n: Vector3<f32>) -> Vector3<f32> {
 pub enum BrdfType {
     #[serde(rename = "COOK_TORRANCE")]
     CookTorrance,
+}
+
+pub fn get_brdf(material_sample: &MaterialSample, brdf_type: BrdfType) -> Box<dyn Brdf> {
+    match brdf_type {
+        BrdfType::CookTorrance => Box::new(CookTorrance::new(material_sample)),
+    }
 }

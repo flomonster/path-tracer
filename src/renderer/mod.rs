@@ -40,15 +40,9 @@ impl Renderer {
 
     /// Render a scene
     pub fn render(&self, scene: &Scene) -> RgbImage {
-        match self.profile.brdf {
-            BrdfType::CookTorrance => self.render_with_brdf::<CookTorrance>(scene),
-        }
-    }
-
-    fn render_with_brdf<B: Brdf>(&self, scene: &Scene) -> RgbImage {
         let width = self.profile.resolution.width;
         let height = self.profile.resolution.height;
-        let image = Arc::new(Mutex::new(RgbImage::new(width, height)));
+        let mut image = RgbImage::new(width, height);
 
         // Save f32 cast of resolution
         let width_f = width as f32;
@@ -57,75 +51,112 @@ impl Renderer {
         let image_ratio = width_f / height_f;
 
         // Create progress bar (if quiet isn't activated)
-        let pb = if self.quiet {
+        let mut pb = if self.quiet {
             None
         } else {
-            let mut pb = ProgressBar::new((width * height) as u64);
+            let mut pb = ProgressBar::new(self.profile.samples as u64);
             pb.message("Rendering: ");
             Some(pb)
         };
-        let pb = Arc::new(Mutex::new(pb));
 
         // Create thread pool
         let pool = ThreadPoolBuilder::new().num_threads(8).build().unwrap();
         let now = Instant::now();
 
-        pool.scope(|s| {
-            for x in 0..width {
-                for y in 0..height {
-                    let image = image.clone();
-                    let pb = pb.clone();
-                    s.spawn(move |_| {
-                        let screen_x = (x as f32 + 0.5) / width_f * 2. - 1.;
-                        let screen_x = screen_x * Rad::tan(scene.camera.fov / 2.) * image_ratio;
+        let buffer = vec![Vector3::<f32>::zero(); (width * height) as usize];
+        let buffer = Arc::new(Mutex::new(buffer));
 
-                        let screen_y = 1. - (y as f32 + 0.5) / height_f * 2.;
-                        let screen_y = screen_y * Rad::tan(scene.camera.fov / 2.);
+        for _ in 0..self.profile.samples {
+            pool.scope(|s| {
+                for x in 0..width {
+                    for y in 0..height {
+                        let buffer = buffer.clone();
+                        s.spawn(move |_| {
+                            let mut screen_x = x as f32 + rand::random::<f32>();
+                            screen_x = screen_x / width_f * 2. - 1.;
+                            screen_x *= Rad::tan(scene.camera.fov / 2.) * image_ratio;
 
-                        let ray_dir = Vector3::new(screen_x, screen_y, -1.).normalize();
-                        let ray_dir = scene.camera.apply_transform_vector(&ray_dir);
-                        let ray = Ray::new(scene.camera.position(), ray_dir);
+                            let mut screen_y = y as f32 + rand::random::<f32>();
+                            screen_y = 1. - screen_y / height_f * 2.;
+                            screen_y *= Rad::tan(scene.camera.fov / 2.);
 
-                        // Compute pixel color
-                        let color = Self::render_pixel::<B>(
-                            scene,
-                            &ray,
-                            self.profile.bounces,
-                            self.profile.samples,
-                        );
+                            let ray_dir = Vector3::new(screen_x, screen_y, -1.).normalize();
+                            let ray_dir = scene.camera.apply_transform_vector(&ray_dir);
+                            let ray = Ray::new(scene.camera.position(), ray_dir);
 
-                        let color = self.post_processing(color);
+                            // Compute pixel color
+                            let color = self.render_pixel(scene, ray) / self.profile.samples as f32;
 
-                        // Set pixel color into image
-                        image.lock().unwrap()[(x, y)] = color;
-
-                        // Update progressbar
-                        if let Some(ref mut pb) = *pb.lock().unwrap() {
-                            pb.inc();
-                        }
-                    });
+                            let mut buffer = buffer.lock().unwrap();
+                            buffer[(x * width + y) as usize] += color;
+                        });
+                    }
                 }
+            });
+            // Update progressbar
+            if let Some(ref mut pb) = pb {
+                pb.inc();
             }
-        });
-        if let Some(ref mut pb) = *pb.lock().unwrap() {
+        }
+
+        // Final pass
+        let buffer = buffer.lock().unwrap();
+        for x in 0..width {
+            for y in 0..height {
+                // Post process
+                let color = self.post_processing(buffer[(x * width + y) as usize]);
+
+                // Set pixel color into image
+                image[(x, y)] = color;
+            }
+        }
+
+        if let Some(ref mut pb) = pb {
             pb.finish_print(format!("Done: {}s", now.elapsed().as_secs()).as_str());
         }
 
-        // Unwrap image
-        Arc::try_unwrap(image).unwrap().into_inner().unwrap()
+        image
     }
 
     /// Render the color of a pixel given a ray and the scene
-    fn render_pixel<B: Brdf>(
-        scene: &Scene,
-        ray: &Ray,
-        bounces: usize,
-        samples: usize,
-    ) -> Vector3<f32> {
-        match Self::ray_cast(scene, ray) {
-            None => Vector3::new(0., 0., 0.),
-            Some((hit, model)) => Self::radiance::<B>(scene, model, &hit, ray, bounces, samples),
+    fn render_pixel(&self, scene: &Scene, mut ray: Ray) -> Vector3<f32> {
+        let mut color = Vector3::new(0., 0., 0.);
+        let mut throughput = Vector3::new(1., 1., 1.);
+
+        for bounce in 0..(self.profile.bounces + 1) {
+            // Test intersection
+            let (hit, model) = match Self::ray_cast(scene, &ray) {
+                None => {
+                    let background_color: Vector3<f32> = self.profile.background_color.into();
+                    return color + throughput.mul_element_wise(background_color);
+                }
+                Some((hit, model)) => (hit, model),
+            };
+
+            let material = MaterialSample::new(&model.material, hit.tex_coords);
+
+            // Get normal from geometry or texture
+            let n = if let Some(normal) = model.material.get_normal(hit.tex_coords) {
+                Self::normal_tangent_to_world(&normal, &hit)
+            } else {
+                hit.normal
+            };
+
+            let view_direction = -1. * ray.direction;
+
+            ray = self.compute_radiance(
+                scene,
+                &hit,
+                view_direction,
+                &material,
+                n,
+                &mut color,
+                &mut throughput,
+                bounce < self.profile.bounces,
+            );
         }
+
+        return color;
     }
 
     fn ray_cast(scene: &Scene, ray: &Ray) -> Option<(Hit, Arc<Model>)> {
@@ -142,65 +173,55 @@ impl Renderer {
         best
     }
 
-    fn radiance<B: Brdf>(
+    fn compute_radiance(
+        &self,
         scene: &Scene,
-        model: Arc<Model>,
         hit: &Hit,
-        ray_in: &Ray,
-        bounces: usize,
-        samples: usize,
-    ) -> Vector3<f32> {
-        let n = if let Some(normal) = model.material.get_normal(hit.tex_coords) {
-            Self::normal_tangent_to_world(&normal, hit)
-        } else {
-            hit.normal
-        };
+        view_direction: Vector3<f32>,
+        material: &MaterialSample,
+        n: Vector3<f32>,
+        color: &mut Vector3<f32>,
+        throughput: &mut Vector3<f32>,
+        compute_indirect: bool,
+    ) -> Ray {
+        let mut brdf = get_brdf(&material, self.profile.brdf);
 
-        let material_sample = MaterialSample::new(&model.material, hit.tex_coords);
-        let mut brdf = B::new(&material_sample);
+        // AO
+        *color += throughput.mul_element_wise(Self::compute_ambient_occlusion(
+            material.albedo,
+            material.ambient_occlusion,
+        ));
 
-        let v = -1. * ray_in.direction;
+        // Emissive
+        *color += throughput.mul_element_wise(material.emissive);
 
         // Direct Light computation
-        let mut direct_radiance = Vector3::zero();
         for light in scene.lights.iter() {
-            let (light_radiance, light_direction) = Self::get_light_info(light, hit, scene);
+            let (light_radiance, light_direction) = Self::get_light_info(light, &hit, scene);
             if light_radiance == Zero::zero() {
                 continue;
             }
-
-            let l = -1. * light_direction;
-            direct_radiance += brdf.eval_direct(n, v, l, light_radiance);
+            let reversed_light_dir = -1. * light_direction;
+            *color += throughput.mul_element_wise(brdf.eval_direct(
+                n,
+                view_direction,
+                reversed_light_dir,
+            )).mul_element_wise(light_radiance);
         }
 
         // Indirect light computation
-        let mut indirect_radiance = Vector3::zero();
-        if bounces > 0 {
-            for _ in 0..samples {
-                let ray_bounce_dir = brdf.sample(n, v);
-                let ray_bounce = Ray::new(
-                    hit.position + hit.normal * Self::NORMAL_BIAS,
-                    ray_bounce_dir,
-                );
-
-                let light_radiance =
-                    Self::render_pixel::<B>(scene, &ray_bounce, bounces - 1, samples);
-
-                let l = ray_bounce_dir;
-                let sample_radiance = brdf.eval_indirect(n, v, l, light_radiance);
-
-                let weighted_sample_radiance = sample_radiance / brdf.pdf();
-
-                indirect_radiance += weighted_sample_radiance;
-            }
-            indirect_radiance /= samples as f32;
+        if compute_indirect {
+            let ray_bounce = Ray::new(
+                hit.position + hit.normal * Self::NORMAL_BIAS,
+                brdf.sample(n, view_direction),
+            );
+            let sample_radiance = brdf.eval_indirect(n, view_direction, ray_bounce.direction);
+            let weighted_sample_radiance = sample_radiance / brdf.pdf();
+            *throughput = throughput.mul_element_wise(weighted_sample_radiance);
+            ray_bounce
+        } else {
+            Default::default()
         }
-
-        // Combine diffuse, specular, AO
-        let mut radiance = direct_radiance + indirect_radiance;
-        radiance += brdf.get_ambient_occlusion();
-
-        radiance
     }
 
     fn normal_tangent_to_world(normal: &Vector3<f32>, hit: &Hit) -> Vector3<f32> {
@@ -284,5 +305,16 @@ impl Renderer {
             (color.y * 255.) as u8,
             (color.z * 255.) as u8,
         ])
+    }
+
+    fn compute_ambient_occlusion(
+        albedo: Vector3<f32>,
+        ambient_occlusion: Option<f32>,
+    ) -> Vector3<f32> {
+        if let Some(ambient_occlusion) = ambient_occlusion {
+            0.03 * ambient_occlusion * albedo
+        } else {
+            Zero::zero()
+        }
     }
 }
