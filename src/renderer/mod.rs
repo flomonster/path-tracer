@@ -88,7 +88,7 @@ impl Renderer {
                             let color = self.render_pixel(scene, ray) / self.profile.samples as f32;
 
                             let mut buffer = buffer.lock().unwrap();
-                            buffer[(x * width + y) as usize] += color;
+                            buffer[(x * height + y) as usize] += color;
                         });
                     }
                 }
@@ -104,7 +104,7 @@ impl Renderer {
         for x in 0..width {
             for y in 0..height {
                 // Post process
-                let color = self.post_processing(buffer[(x * width + y) as usize]);
+                let color = self.post_processing(buffer[(x * height + y) as usize]);
 
                 // Set pixel color into image
                 image[(x, y)] = color;
