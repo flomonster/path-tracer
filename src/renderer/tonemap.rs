@@ -11,6 +11,12 @@ pub enum TonemapType {
     Aces,
 }
 
+impl Default for TonemapType {
+    fn default() -> Self {
+        Self::Filmic
+    }
+}
+
 pub fn tonemap(tonemap_type: TonemapType, color: Vector3<f32>) -> Vector3<f32> {
     match tonemap_type {
         TonemapType::Reinhard => reinhard(color),

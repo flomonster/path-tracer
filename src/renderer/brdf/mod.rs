@@ -47,6 +47,12 @@ pub enum BrdfType {
     CookTorrance,
 }
 
+impl Default for BrdfType {
+    fn default() -> Self {
+        Self::CookTorrance
+    }
+}
+
 pub fn get_brdf(material_sample: &MaterialSample, brdf_type: BrdfType) -> Box<dyn Brdf> {
     match brdf_type {
         BrdfType::CookTorrance => Box::new(CookTorrance::new(material_sample)),
