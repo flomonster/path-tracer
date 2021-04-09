@@ -12,6 +12,7 @@ pub struct Config {
     pub input: PathBuf,
     pub output: PathBuf,
     pub quiet: bool,
+    pub viewer: bool,
     pub profile: Profile,
 }
 
@@ -26,14 +27,11 @@ impl Config {
             config.profile = Profile::load(path)?;
         }
 
-        // Apply output
+        // Apply options and parameters
         config.output = args.value_of("output").unwrap().into();
-
-        // Apply input
         config.input = args.value_of("INPUT").unwrap().into();
-
-        // Apply other options and parameters
         config.quiet = args.is_present("quiet");
+        config.viewer = args.is_present("viewer");
 
         Ok(config)
     }
@@ -46,6 +44,7 @@ impl Default for Config {
             output: Default::default(),
             profile: Default::default(),
             quiet: true,
+            viewer: false,
         }
     }
 }

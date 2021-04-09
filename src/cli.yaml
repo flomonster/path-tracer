@@ -9,6 +9,7 @@ args:
         help: A path to the yaml file containing all the rendering profile information
     - INPUT:
         help: Input file name GLTF format
+        required: true
     - output:
         long: output
         short: o
@@ -23,3 +24,7 @@ args:
         long: quiet
         short: q
         help: No progress bar printed
+    - viewer:
+        long: viewer
+        short: v
+        help: Display a viewer
