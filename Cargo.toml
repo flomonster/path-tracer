@@ -18,4 +18,5 @@ rand = "0.8.3"
 rayon = "1.5.0"
 serde = {version = "1.0.125", features = ["derive"]}
 serde_yaml = "0.8.17"
+sfml = "0.16.0"
 yaml-rust = "0.4"
