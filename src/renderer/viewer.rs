@@ -1,7 +1,7 @@
 use crate::config::Resolution;
 use sfml::graphics::*;
 use sfml::window::*;
-use std::sync::mpsc::{channel, Receiver, Sender};
+use std::sync::mpsc::{channel, Receiver, SendError, Sender};
 use std::thread;
 use std::thread::JoinHandle;
 use std::time::{Duration, Instant};
@@ -21,11 +21,14 @@ impl Viewer {
         Viewer { thread, sender }
     }
 
-    pub fn send_pixel_update(sender: &SenderPixel, x: u32, y: u32, color: [u8; 3]) {
+    pub fn send_pixel_update(
+        sender: &SenderPixel,
+        x: u32,
+        y: u32,
+        color: [u8; 3],
+    ) -> Result<(), SendError<(u32, u32, Color)>> {
         let color = Color::rgb(color[0], color[1], color[2]);
-        sender
-            .send((x, y, color))
-            .expect("Couldn't send pixel update");
+        sender.send((x, y, color))
     }
 
     pub fn wait_for_close(self) {

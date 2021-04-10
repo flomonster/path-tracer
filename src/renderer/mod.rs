@@ -110,11 +110,13 @@ impl Renderer {
                             buffer[buffer_pos] += color;
 
                             // Send it to viewer
-                            let sender = sender.lock().unwrap();
-                            if let Some(sender) = &*sender {
+                            let mut sender_guard = sender.lock().unwrap();
+                            if let Some(sender) = &*sender_guard {
                                 let color = buffer[buffer_pos] / current_sample as f32;
                                 let color = Self::post_processing(&profile, color);
-                                Viewer::send_pixel_update(sender, x, y, color.0);
+                                if let Err(_) = Viewer::send_pixel_update(sender, x, y, color.0) {
+                                    *sender_guard = None;
+                                }
                             }
                         });
                     }
