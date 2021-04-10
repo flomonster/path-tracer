@@ -10,6 +10,11 @@
 
 This project is an implementation of Monte Carlo path tracing in **Rust**.
 
+
+## Examples:
+![](readme/ps5_b2_s64_tonemap.png "PS5 2bounces, 64samples")
+
+
 ## How to use ?
 
 The renderer takes as input a scene in **glTF** format.
@@ -56,7 +61,7 @@ nb_threads: 8 # Number of threads to use (0 will use the maximum available threa
 - [x] Parallel computation
 - [x] KD Tree
 - [x] Unidirectional Monte Carlo path tracing
-- [x] BRDF
+- [x] Microfacet BRDF
 - [x] Importance sampling
 - [x] Various Tone mapping
 - [x] Viewer
