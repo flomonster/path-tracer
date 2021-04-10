@@ -37,17 +37,45 @@ impl Viewer {
 }
 
 fn run(resolution: Resolution, recv: ReceiverPixel) {
-    let mut window =
-        RenderWindow::new((1280, 720), "Path Tracer", Style::CLOSE | Style::RESIZE | Style::TITLEBAR, &Default::default());
+    let mut window_size = Resolution::new(resolution.width, resolution.height);
+    let mut window = RenderWindow::new(
+        (window_size.width, window_size.height),
+        "Path Tracer",
+        Style::CLOSE | Style::RESIZE | Style::TITLEBAR,
+        &Default::default(),
+    );
     let mut image = Image::new(resolution.width, resolution.height);
+    let mut texture = Texture::new(resolution.width, resolution.height).unwrap();
+    let mut view = View::from_rect(&FloatRect::new(0., 0., window_size.width as f32, window_size.height as f32));
+    let mut view_center = (
+        window_size.width as f32 / 2.,
+        window_size.height as f32 / 2.
+    );
 
     // The main loop - ends as soon as the window is closed
     while window.is_open() {
+   
         // Event processing
         while let Some(event) = window.poll_event() {
             // Request closing for the window
-            if event == Event::Closed {
-                window.close();
+            match event {
+                Event::Closed => window.close(),
+                Event::Resized { width, height } => {
+                    window_size = Resolution::new(width, height);
+                    view.set_size((width as f32, height as f32));
+                    view.set_center((width as f32 / 2., height as f32 / 2.));
+                },
+                Event::MouseWheelScrolled { delta, x, y, .. } => {
+                    let zoom_factor = - delta / 20.;
+                    view.zoom(1. + zoom_factor);
+                    view_center = (
+                        view_center.0 + (x as f32 - view_center.0) * f32::abs(delta) / 20.,
+                        view_center.1 + (y as f32 - view_center.1) * f32::abs(delta) / 20.,
+                    );
+                    view.set_center(view_center);
+
+                }
+                _ => {}
             }
         }
 
@@ -60,8 +88,10 @@ fn run(resolution: Resolution, recv: ReceiverPixel) {
         }
 
         // Draw the image
-        let texture = Texture::from_image(&image).unwrap();
-        let sprite = Sprite::with_texture_and_rect(&texture, &Rect::new(0, 0, 1280, 720));
+        window.clear(Color::BLACK);
+        texture.update_from_image(&image, 0, 0);
+        let sprite = Sprite::with_texture(&texture);
+        window.set_view(&view);
         window.draw(&sprite);
 
         // End the current frame and display its contents on screen
