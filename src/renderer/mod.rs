@@ -79,7 +79,11 @@ impl Renderer {
         }));
 
         // Create thread pool
-        let pool = ThreadPoolBuilder::new().num_threads(8).build().unwrap();
+        let pool = ThreadPoolBuilder::new()
+            .num_threads(profile.nb_treads)
+            .build()
+            .unwrap();
+
         let now = Instant::now();
 
         for current_sample in 1..(profile.samples + 1) {
