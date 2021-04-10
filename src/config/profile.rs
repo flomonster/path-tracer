@@ -20,6 +20,8 @@ pub struct Profile {
     pub tonemap: TonemapType,
     #[serde(default)]
     pub background_color: [f32; 3],
+    #[serde(default)]
+    pub nb_treads: usize,
 }
 
 impl Profile {
@@ -38,14 +40,15 @@ impl Default for Profile {
             brdf: Default::default(),
             tonemap: Default::default(),
             background_color: [0., 0., 0.],
+            nb_treads: Default::default(),
         }
     }
 }
 
 fn default_bounces() -> usize {
-    2
+    4
 }
 
 fn default_samples() -> usize {
-    16
+    64
 }

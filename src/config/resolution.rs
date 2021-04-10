@@ -9,8 +9,8 @@ pub struct Resolution {
 impl Default for Resolution {
     fn default() -> Self {
         Resolution {
-            width: 800,
-            height: 800,
+            width: 1920,
+            height: 1080,
         }
     }
 }
