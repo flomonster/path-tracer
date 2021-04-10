@@ -38,7 +38,7 @@ impl Viewer {
 
 fn run(resolution: Resolution, recv: ReceiverPixel) {
     let mut window =
-        RenderWindow::new((600, 600), "Path Tracer", Style::CLOSE, &Default::default());
+        RenderWindow::new((1280, 720), "Path Tracer", Style::CLOSE | Style::RESIZE | Style::TITLEBAR, &Default::default());
     let mut image = Image::new(resolution.width, resolution.height);
 
     // The main loop - ends as soon as the window is closed
@@ -61,7 +61,7 @@ fn run(resolution: Resolution, recv: ReceiverPixel) {
 
         // Draw the image
         let texture = Texture::from_image(&image).unwrap();
-        let sprite = Sprite::with_texture_and_rect(&texture, &Rect::new(0, 0, 600, 600));
+        let sprite = Sprite::with_texture_and_rect(&texture, &Rect::new(0, 0, 1280, 720));
         window.draw(&sprite);
 
         // End the current frame and display its contents on screen
