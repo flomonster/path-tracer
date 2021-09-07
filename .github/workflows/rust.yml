@@ -8,7 +8,9 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v1
+    - uses: actions/checkout@v2
+    - name: Install lib csfml
+      run: sudo apt-get install -y libcsfml-dev
     - name: Build
       run: cargo build --release --verbose
     - name: Run tests
