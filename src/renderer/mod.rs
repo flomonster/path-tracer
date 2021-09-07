@@ -1,12 +1,13 @@
 pub mod brdf;
+pub mod debug_renderer;
 pub mod tonemap;
+pub mod utils;
 
 mod material_sample;
 mod viewer;
 
 use crate::config::*;
-use crate::scene::model::Model;
-use crate::utils::{Hit, Intersectable, Ray};
+use crate::utils::{Hit, Ray};
 use crate::Scene;
 use brdf::*;
 use cgmath::*;
@@ -19,6 +20,7 @@ use std::f32::consts::PI;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use tonemap::*;
+use utils::*;
 use viewer::Viewer;
 
 pub struct Renderer {
@@ -162,19 +164,19 @@ impl Renderer {
 
         for bounce in 0..(profile.bounces + 1) {
             // Test intersection
-            let (hit, model) = match Self::ray_cast(scene, &ray) {
+            let (hit, model) = match ray_cast(scene, &ray) {
                 None => {
                     let background_color: Vector3<f32> = profile.background_color.into();
                     return color + throughput.mul_element_wise(background_color);
                 }
-                Some((hit, model)) => (hit, model),
+                Some(res) => res,
             };
 
             let material = MaterialSample::new(&model.material, hit.tex_coords);
 
             // Get normal from geometry or texture
             let n = if let Some(normal) = model.material.get_normal(hit.tex_coords) {
-                Self::normal_tangent_to_world(&normal, &hit)
+                normal_tangent_to_world(&normal, &hit)
             } else {
                 hit.normal
             };
@@ -195,20 +197,6 @@ impl Renderer {
         }
 
         return color;
-    }
-
-    fn ray_cast(scene: &Scene, ray: &Ray) -> Option<(Hit, Arc<Model>)> {
-        let mut best = None;
-        for model in scene.models.intersect(&ray.origin, &ray.direction) {
-            if let Some(hit) = model.intersect(ray) {
-                best = match best {
-                    None => Some((hit, model)),
-                    Some((best_hit, _)) if best_hit.dist > hit.dist => Some((hit, model)),
-                    _ => best,
-                }
-            }
-        }
-        best
     }
 
     fn compute_radiance(
@@ -260,25 +248,6 @@ impl Renderer {
         }
     }
 
-    fn normal_tangent_to_world(normal: &Vector3<f32>, hit: &Hit) -> Vector3<f32> {
-        let edge1 = hit.triangle[1].position - hit.triangle[0].position;
-        let edge2 = hit.triangle[2].position - hit.triangle[0].position;
-        let delta_uv1 = hit.triangle[1].tex_coords - hit.triangle[0].tex_coords;
-        let delta_uv2 = hit.triangle[2].tex_coords - hit.triangle[0].tex_coords;
-
-        let f = 1. / (delta_uv1.x * delta_uv2.y - delta_uv2.x * delta_uv1.y);
-        let tangent = Vector3::new(
-            f * (delta_uv2.y * edge1.x - delta_uv1.y * edge2.x),
-            f * (delta_uv2.y * edge1.y - delta_uv1.y * edge2.y),
-            f * (delta_uv2.y * edge1.z - delta_uv1.y * edge2.z),
-        )
-        .normalize();
-
-        let bitangent = hit.normal.cross(tangent);
-        let tbn = Matrix3::from_cols(tangent, bitangent, hit.normal);
-        (tbn * normal).normalize()
-    }
-
     fn get_light_info(light: &Light, hit: &Hit, scene: &Scene) -> (Vector3<f32>, Vector3<f32>) {
         match light {
             Light::Directional {
@@ -289,7 +258,7 @@ impl Renderer {
                 let shadow_ray_ori = hit.position + hit.normal * Self::NORMAL_BIAS;
                 let shadow_ray_dir = -1. * direction;
                 let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
-                match Self::ray_cast(scene, &shadow_ray) {
+                match ray_cast(scene, &shadow_ray) {
                     None => (*intensity * color, direction.clone()),
                     _ => (Vector3::zero(), Vector3::zero()),
                 }
@@ -311,7 +280,7 @@ impl Renderer {
                 let dissipation = 4. * PI * dist * dist; // 4πr^2
                 let light_dissipated = intensity / dissipation * color;
 
-                match Self::ray_cast(scene, &shadow_ray) {
+                match ray_cast(scene, &shadow_ray) {
                     None => (light_dissipated, direction),
                     _ => (Vector3::zero(), Vector3::zero()),
                 }

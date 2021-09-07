@@ -28,3 +28,6 @@ args:
         long: viewer
         short: v
         help: Display a viewer
+    - debug:
+        long: debug-textures
+        help: Generate debug textures
