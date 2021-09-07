@@ -13,6 +13,7 @@ pub struct Config {
     pub output: PathBuf,
     pub quiet: bool,
     pub viewer: bool,
+    pub debug: bool,
     pub profile: Profile,
 }
 
@@ -32,6 +33,7 @@ impl Config {
         config.input = args.value_of("INPUT").unwrap().into();
         config.quiet = args.is_present("quiet");
         config.viewer = args.is_present("viewer");
+        config.debug = args.is_present("debug");
 
         Ok(config)
     }
@@ -45,6 +47,7 @@ impl Default for Config {
             profile: Default::default(),
             quiet: true,
             viewer: false,
+            debug: false,
         }
     }
 }

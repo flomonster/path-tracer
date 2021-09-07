@@ -8,6 +8,7 @@ mod utils;
 
 use clap::App;
 use config::Config;
+use renderer::debug_renderer::debug_render;
 use renderer::Renderer;
 use scene::Scene;
 use std::error::Error;
@@ -28,6 +29,11 @@ fn run() -> Result<(), Box<dyn Error>> {
     let config = Config::load(&App::from_yaml(yaml).get_matches())?;
 
     let scene = Scene::load(&config.input)?;
+
+    if config.debug {
+        debug_render(&scene, &config.profile.resolution);
+        return Ok(());
+    }
 
     // Send scene to Renderer
     let renderer = Renderer::new(&config);
