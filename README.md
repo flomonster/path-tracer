@@ -12,7 +12,7 @@ This project is an implementation of Monte Carlo path tracing in **Rust**.
 
 
 ## Examples:
-![](readme/ps5_b5_s128_tonemap.png "PS5 5bounces, 128samples")
+![](readme/ps5_b5_s128.png "PS5 5bounces, 128samples")
 
 
 ## How to use ?
