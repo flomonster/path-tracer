@@ -194,6 +194,14 @@ impl Renderer {
                 &mut throughput,
                 bounce < profile.bounces,
             );
+
+            if throughput.magnitude2() < 0.00001 {
+                break;
+            }
+
+            if bounce > 3 && russian_roulette(&mut throughput) {
+                break;
+            }
         }
 
         return color;
