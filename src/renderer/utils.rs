@@ -39,9 +39,9 @@ pub fn normal_tangent_to_world(normal: &Vector3<f32>, hit: &Hit) -> Vector3<f32>
 pub fn russian_roulette(throughput: &mut Vector3<f32>) -> bool {
     // Randomly terminate a path with a probability inversely equal to the throughput
     let rr_proba = throughput.x.max(throughput.y).max(throughput.z);
-    
+
     // Add the energy we 'lose' by randomly terminating paths
     *throughput *= 1. / rr_proba;
-    
+
     return rand::random::<f32>() > rr_proba;
 }
