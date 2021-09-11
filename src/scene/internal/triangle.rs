@@ -45,8 +45,8 @@ impl Intersectable<Option<Hit>> for Triangle {
         let pvec = ray.direction.cross(v0v2);
         let det = v0v1.dot(pvec);
 
-        // Check face culling
-        if det < 0.000001 {
+        // Check parallel face (backface culling is disabled)
+        if det.abs() < 0.000001 {
             return None;
         }
 

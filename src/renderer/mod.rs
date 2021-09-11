@@ -172,8 +172,9 @@ impl Renderer {
     /// Render the color of a pixel given a ray and the scene
     fn render_pixel(profile: &Profile, scene: &Scene, mut ray: Ray) -> Vector3<f32> {
         let mut rad_info = RadianceInfo::default();
+        let mut bounce = 0;
 
-        for bounce in 0..(profile.bounces + 1) {
+        loop {
             // Test intersection
             let (hit, model) = match ray_cast(scene, &ray) {
                 None => {
@@ -199,6 +200,13 @@ impl Renderer {
 
             let view_direction = -1. * ray.direction;
 
+            // Alpha transparency
+            let opacity = surface_info.material.opacity;
+            if opacity < 1. && rand::random::<f32>() >= opacity {
+                ray = Ray::new(surface_info.hit.get_position() + ray.direction * Self::NORMAL_BIAS, ray.direction);
+                continue;
+            }
+
             (rad_info, ray) = Self::compute_radiance(
                 profile,
                 scene,
@@ -215,6 +223,8 @@ impl Renderer {
             if bounce > 3 && russian_roulette(&mut rad_info.throughput) {
                 break;
             }
+
+            bounce += 1;
         }
         rad_info.color
     }
