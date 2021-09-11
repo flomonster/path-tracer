@@ -285,9 +285,19 @@ impl Renderer {
                     hit.get_position() + hit.get_geometric_normal() * Self::NORMAL_BIAS;
                 let shadow_ray_dir = -1. * direction;
                 let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
+                // TODO: opacity light filter should consider all hits and not only the closest
+                // TODO: no shadow for inner transparent objects
                 match ray_cast(scene, &shadow_ray) {
                     None => (*color, *direction),
-                    _ => (Vector3::zero(), Vector3::zero()),
+                    Some((hit, model)) => {
+                        let material = MaterialSample::new(&model.material, hit.tex_coords);
+                        if material.opacity < 1. {
+                            (*intensity * material.opacity * color.mul_element_wise(material.albedo), direction.clone())
+                        }
+                        else {
+                            (Vector3::zero(), Vector3::zero())
+                        }
+                    },
                 }
             }
 
