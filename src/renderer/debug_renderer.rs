@@ -81,6 +81,9 @@ fn render_debug_pixels(scene: &Scene, ray: &Ray) -> HashMap<&'static str, Vector
 
     let one = Vector3::new(1., 1., 1.);
 
+    // Opacity
+    result.insert("opacity", one * material.opacity);
+
     // metalness
     result.insert("metalness", one * material.metalness);
 
