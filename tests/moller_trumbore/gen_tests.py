@@ -45,7 +45,7 @@ def ray_triangle_intersect(r, v0, v1, v2):
 
     det = v0v1.dot(pvec)
 
-    if det < 0.000001:
+    if abs(det) < 0.000001:
         return None
 
     invDet = 1.0 / det
