@@ -39,7 +39,7 @@ Profile files are used to configure the renderer behaviour.
 | `bounces` | Maximum number of bounces per sample | `4` |
 | `brdf` | Which brdf tu use (`COOK_TORRANCE`) | `COOK_TORRANCE` |
 | `tonemap` | Which color tone map tu use (`REINHARD`, `FILMIC`, `ACES`) | `FILMIC` |
-| `background_color` | Color of the brackground (in RGB [`0.`:`1.`]) | `[0., 0., 0.]` |
+| `background_color` | Color of the brackground (in RGB [`0.`:`MAX_FLOAT`]) | `[0., 0., 0.]` |
 | `nb_threads` | Number of threads to use (`0` will use the maximum available threads) | `0` |
 
 Here is a profile example.
