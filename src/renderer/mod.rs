@@ -289,7 +289,7 @@ impl Renderer {
                 let light_dissipated = intensity / dissipation * color;
 
                 match ray_cast(scene, &shadow_ray) {
-                    Some((shadow_hit, _)) if (shadow_hit.position - position).magnitude() < dist => (Vector3::zero(), Vector3::zero()),
+                    Some((shadow_hit, _)) if (shadow_hit.position - hit.position).magnitude() < dist => (Vector3::zero(), Vector3::zero()),
                     _ => (light_dissipated, direction)
                 }
             }
