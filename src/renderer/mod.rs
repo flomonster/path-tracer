@@ -221,10 +221,10 @@ impl Renderer {
         let mut brdf = get_brdf(&material, profile.brdf);
 
         // AO
-        *color += throughput.mul_element_wise(Self::compute_ambient_occlusion(
-            material.albedo,
-            material.ambient_occlusion,
-        ));
+        // *color += throughput.mul_element_wise(Self::compute_ambient_occlusion(
+        //     material.albedo,
+        //     material.ambient_occlusion,
+        // ));
 
         // Emissive
         *color += throughput.mul_element_wise(material.emissive);
