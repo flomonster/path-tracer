@@ -10,5 +10,5 @@ use cgmath::*;
 
 /// Compute reflection vector given incident and normal vectors
 pub fn reflection(i: &Vector3<f32>, n: &Vector3<f32>) -> Vector3<f32> {
-    2. * i.dot(n.clone()).max(0.) * n - i
+    2. * i.dot(*n).max(0.) * n - i
 }

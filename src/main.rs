@@ -47,14 +47,16 @@ fn run() -> Result<(), Box<dyn Error>> {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::path::{Path, PathBuf};
+    use std::path::Path;
 
     fn test_scene<P>(path: P)
     where
         P: AsRef<Path>,
     {
-        let mut config = Config::default();
-        config.input = PathBuf::from(path.as_ref());
+        let config = Config {
+            input: path.as_ref().to_path_buf(),
+            ..Default::default()
+        };
         let scene = Scene::load(&config.input).unwrap();
         Renderer::new(&config).render(&scene);
     }

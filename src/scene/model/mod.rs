@@ -48,7 +48,7 @@ impl From<&easy_gltf::Model> for Model {
         );
         Model {
             triangles: kdtree,
-            material: eg_model.material().clone(),
+            material: eg_model.material(),
         }
     }
 }

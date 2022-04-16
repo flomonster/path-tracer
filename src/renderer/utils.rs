@@ -43,5 +43,5 @@ pub fn russian_roulette(throughput: &mut Vector3<f32>) -> bool {
     // Add the energy we 'lose' by randomly terminating paths
     *throughput *= 1. / rr_proba;
 
-    return rand::random::<f32>() > rr_proba;
+    rand::random::<f32>() > rr_proba
 }
