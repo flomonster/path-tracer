@@ -13,10 +13,10 @@ pub fn line(id: &str, origin: &Vector3<f32>, dest: &Vector3<f32>) {
     let index = LOG_INDEX.fetch_add(2, Ordering::Relaxed);
     let mut file = LOG_FILE.lock().unwrap();
 
-    write!(file, "o {}\n", id).unwrap();
-    write!(file, "v {} {} {}\n", origin.x, origin.y, origin.z).unwrap();
-    write!(file, "v {} {} {}\n", dest.x, dest.y, dest.z).unwrap();
-    write!(file, "l {} {}\n\n", index, index + 1).unwrap();
+    writeln!(file, "o {}", id).unwrap();
+    writeln!(file, "v {} {} {}", origin.x, origin.y, origin.z).unwrap();
+    writeln!(file, "v {} {} {}", dest.x, dest.y, dest.z).unwrap();
+    writeln!(file, "l {} {}\n", index, index + 1).unwrap();
 }
 
 pub fn ray(id: &str, ray: &Ray) {

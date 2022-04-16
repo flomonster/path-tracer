@@ -62,7 +62,7 @@ impl Intersectable<Option<Hit>> for Triangle {
 
         let tvec = ray.origin - self[0].position;
         let u = tvec.dot(pvec) * invdet;
-        if u < 0. || u > 1. {
+        if !(0.0..=1.).contains(&u) {
             return None;
         }
 

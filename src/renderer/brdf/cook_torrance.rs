@@ -21,7 +21,7 @@ impl Brdf for CookTorrance {
 
         // Compute direction by reflecting v about the microfacet normal
         let sample_dir = reflection(&v, &self.microfacet_normal);
-        return sample_dir.normalize();
+        sample_dir.normalize()
     }
 
     fn eval_direct(
@@ -47,7 +47,7 @@ impl Brdf for CookTorrance {
         // Diffuse
         let diffuse = self.compute_diffuse(f, geometric_normal, light_direction);
 
-        return diffuse + specular + self.emissive;
+        diffuse + specular + self.emissive
     }
 
     fn eval_indirect(
@@ -77,12 +77,12 @@ impl Brdf for CookTorrance {
         // Diffuse
         let diffuse = self.compute_diffuse(f, geometric_normal, light_direction);
 
-        return diffuse + specular;
+        diffuse + specular
     }
 
     fn pdf(&self) -> f32 {
         // We simplify the PDF by canceling the NDF term in the BRDF
-        return 1.;
+        1.
     }
 }
 
@@ -156,7 +156,7 @@ impl CookTorrance {
         let k = (a + 1.).powi(2) / 8.;
         let ggx1 = self.geometry_schlick_ggx(n_dot_v, k);
         let ggx2 = self.geometry_schlick_ggx(n_dot_l, k);
-        return ggx1 * ggx2;
+        ggx1 * ggx2
     }
 
     fn distribution_ggx(&self, n: Vector3<f32>, h: Vector3<f32>) -> f32 {
@@ -169,7 +169,7 @@ impl CookTorrance {
         let mut denom = n_dot_h_2 * (a2 - 1.) + 1.;
         denom = PI * denom * denom;
 
-        return num / denom;
+        num / denom
     }
 
     fn compute_f0(metalness: f32, albedo: Vector3<f32>) -> Vector3<f32> {

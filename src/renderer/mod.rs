@@ -36,7 +36,7 @@ impl Renderer {
     /// Create new raytracer given resolution
     pub fn new(config: &Config) -> Self {
         let viewer = if config.viewer {
-            Some(Viewer::create(config.profile.resolution.clone()))
+            Some(Viewer::create(config.profile.resolution))
         } else {
             None
         };
@@ -74,11 +74,7 @@ impl Renderer {
         let image_ratio = width_f / height_f;
 
         let profile = self.profile;
-        let sender = Arc::new(Mutex::new(if let Some(viewer) = &self.viewer {
-            Some(viewer.sender.clone())
-        } else {
-            None
-        }));
+        let sender = Arc::new(Mutex::new(self.viewer.as_ref().map(|v| v.sender.clone())));
 
         // Create thread pool
         let pool = ThreadPoolBuilder::new()
@@ -120,7 +116,7 @@ impl Renderer {
                             if let Some(sender) = &*sender_guard {
                                 let color = buffer[buffer_pos] / current_sample as f32;
                                 let color = Self::post_processing(&profile, color);
-                                if let Err(_) = Viewer::send_pixel_update(sender, x, y, color.0) {
+                                if Viewer::send_pixel_update(sender, x, y, color.0).is_err() {
                                     *sender_guard = None;
                                 }
                             }
@@ -203,8 +199,7 @@ impl Renderer {
                 break;
             }
         }
-
-        return color;
+        color
     }
 
     fn compute_radiance(
@@ -218,7 +213,7 @@ impl Renderer {
         throughput: &mut Vector3<f32>,
         compute_indirect: bool,
     ) -> Ray {
-        let mut brdf = get_brdf(&material, profile.brdf);
+        let mut brdf = get_brdf(material, profile.brdf);
 
         // AO
         // *color += throughput.mul_element_wise(Self::compute_ambient_occlusion(
@@ -231,7 +226,7 @@ impl Renderer {
 
         // Direct Light computation
         for light in scene.lights.iter() {
-            let (light_radiance, light_direction) = Self::get_light_info(light, &hit, scene);
+            let (light_radiance, light_direction) = Self::get_light_info(light, hit, scene);
             if light_radiance == Zero::zero() {
                 continue;
             }
@@ -267,7 +262,7 @@ impl Renderer {
                 let shadow_ray_dir = -1. * direction;
                 let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
                 match ray_cast(scene, &shadow_ray) {
-                    None => (*intensity * color, direction.clone()),
+                    None => (*intensity * color, *direction),
                     _ => (Vector3::zero(), Vector3::zero()),
                 }
             }
@@ -289,8 +284,12 @@ impl Renderer {
                 let light_dissipated = intensity / dissipation * color;
 
                 match ray_cast(scene, &shadow_ray) {
-                    Some((shadow_hit, _)) if (shadow_hit.position - hit.position).magnitude() < dist => (Vector3::zero(), Vector3::zero()),
-                    _ => (light_dissipated, direction)
+                    Some((shadow_hit, _))
+                        if (shadow_hit.position - hit.position).magnitude() < dist =>
+                    {
+                        (Vector3::zero(), Vector3::zero())
+                    }
+                    _ => (light_dissipated, direction),
                 }
             }
             _ => unimplemented!("Light not implemented: {:?}", light),
@@ -317,7 +316,7 @@ impl Renderer {
         ])
     }
 
-    fn compute_ambient_occlusion(
+    fn _compute_ambient_occlusion(
         albedo: Vector3<f32>,
         ambient_occlusion: Option<f32>,
     ) -> Vector3<f32> {
