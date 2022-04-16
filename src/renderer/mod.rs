@@ -11,6 +11,7 @@ use crate::utils::{Hit, Ray};
 use crate::Scene;
 use brdf::*;
 use cgmath::*;
+use derivative::Derivative;
 use easy_gltf::Light;
 use image::{Rgb, RgbImage};
 use material_sample::MaterialSample;
@@ -27,6 +28,21 @@ pub struct Renderer {
     profile: Profile,
     quiet: bool,
     viewer: Option<Viewer>,
+}
+
+#[derive(Derivative)]
+#[derivative(Default)]
+struct RadianceInfo {
+    #[derivative(Default(value = "Vector3::zero()"))]
+    color: Vector3<f32>,
+    #[derivative(Default(value = "Vector3::new(1., 1., 1.)"))]
+    throughput: Vector3<f32>,
+}
+
+struct SurfaceInfo {
+    hit: Hit,
+    material: MaterialSample,
+    normal: Vector3<f32>,
 }
 
 impl Renderer {
@@ -155,15 +171,14 @@ impl Renderer {
 
     /// Render the color of a pixel given a ray and the scene
     fn render_pixel(profile: &Profile, scene: &Scene, mut ray: Ray) -> Vector3<f32> {
-        let mut color = Vector3::new(0., 0., 0.);
-        let mut throughput = Vector3::new(1., 1., 1.);
+        let mut rad_info = RadianceInfo::default();
 
         for bounce in 0..(profile.bounces + 1) {
             // Test intersection
             let (hit, model) = match ray_cast(scene, &ray) {
                 None => {
                     let background_color: Vector3<f32> = profile.background_color.into();
-                    return color + throughput.mul_element_wise(background_color);
+                    return rad_info.color + rad_info.throughput.mul_element_wise(background_color);
                 }
                 Some(res) => res,
             };
@@ -177,43 +192,46 @@ impl Renderer {
                 hit.normal
             };
 
+            let surface_info = SurfaceInfo {
+                hit,
+                material,
+                normal: n,
+            };
+
             let view_direction = -1. * ray.direction;
 
-            ray = Self::compute_radiance(
+            (rad_info, ray) = Self::compute_radiance(
                 profile,
                 scene,
-                &hit,
+                rad_info,
+                &surface_info,
                 view_direction,
-                &material,
-                n,
-                &mut color,
-                &mut throughput,
                 bounce < profile.bounces,
             );
 
-            if throughput.magnitude2() < 0.00001 {
+            if rad_info.throughput.magnitude2() < 0.00001 {
                 break;
             }
 
-            if bounce > 3 && russian_roulette(&mut throughput) {
+            if bounce > 3 && russian_roulette(&mut rad_info.throughput) {
                 break;
             }
         }
-        color
+        rad_info.color
     }
 
     fn compute_radiance(
         profile: &Profile,
         scene: &Scene,
-        hit: &Hit,
+        rad_info: RadianceInfo,
+        surface_info: &SurfaceInfo,
         view_direction: Vector3<f32>,
-        material: &MaterialSample,
-        n: Vector3<f32>,
-        color: &mut Vector3<f32>,
-        throughput: &mut Vector3<f32>,
         compute_indirect: bool,
-    ) -> Ray {
-        let mut brdf = get_brdf(material, profile.brdf);
+    ) -> (RadianceInfo, Ray) {
+        let mut brdf = get_brdf(&surface_info.material, profile.brdf);
+        let mut color = rad_info.color;
+        let mut throughput = rad_info.throughput;
+        let mut ray = Default::default();
 
         // AO
         // *color += throughput.mul_element_wise(Self::compute_ambient_occlusion(
@@ -222,33 +240,38 @@ impl Renderer {
         // ));
 
         // Emissive
-        *color += throughput.mul_element_wise(material.emissive);
+        color += throughput.mul_element_wise(surface_info.material.emissive);
 
         // Direct Light computation
         for light in scene.lights.iter() {
-            let (light_radiance, light_direction) = Self::get_light_info(light, hit, scene);
+            let (light_radiance, light_direction) =
+                Self::get_light_info(light, &surface_info.hit, scene);
             if light_radiance == Zero::zero() {
                 continue;
             }
             let reversed_light_dir = -1. * light_direction;
-            *color += throughput
-                .mul_element_wise(brdf.eval_direct(n, view_direction, reversed_light_dir))
+            color += throughput
+                .mul_element_wise(brdf.eval_direct(
+                    surface_info.normal,
+                    view_direction,
+                    reversed_light_dir,
+                ))
                 .mul_element_wise(light_radiance);
         }
 
         // Indirect light computation
         if compute_indirect {
-            let ray_bounce = Ray::new(
-                hit.position + hit.normal * Self::NORMAL_BIAS,
-                brdf.sample(n, view_direction),
+            ray = Ray::new(
+                surface_info.hit.position + surface_info.hit.normal * Self::NORMAL_BIAS,
+                brdf.sample(surface_info.normal, view_direction),
             );
-            let sample_radiance = brdf.eval_indirect(n, view_direction, ray_bounce.direction);
+            let sample_radiance =
+                brdf.eval_indirect(surface_info.normal, view_direction, ray.direction);
             let weighted_sample_radiance = sample_radiance / brdf.pdf();
-            *throughput = throughput.mul_element_wise(weighted_sample_radiance);
-            ray_bounce
-        } else {
-            Default::default()
+            throughput = throughput.mul_element_wise(weighted_sample_radiance);
         }
+
+        (RadianceInfo { color, throughput }, ray)
     }
 
     fn get_light_info(light: &Light, hit: &Hit, scene: &Scene) -> (Vector3<f32>, Vector3<f32>) {

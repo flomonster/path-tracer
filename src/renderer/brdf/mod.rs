@@ -3,6 +3,7 @@ mod cook_torrance;
 use super::MaterialSample;
 use cgmath::*;
 pub use cook_torrance::CookTorrance;
+use derivative::Derivative;
 use serde::Deserialize;
 
 pub trait Brdf {
@@ -41,16 +42,12 @@ pub fn transform_to_world(vec: Vector3<f32>, n: Vector3<f32>) -> Vector3<f32> {
     )
 }
 
-#[derive(Copy, Debug, Clone, Deserialize)]
+#[derive(Derivative, Copy, Debug, Clone, Deserialize)]
+#[derivative(Default)]
 pub enum BrdfType {
     #[serde(rename = "COOK_TORRANCE")]
+    #[derivative(Default)]
     CookTorrance,
-}
-
-impl Default for BrdfType {
-    fn default() -> Self {
-        Self::CookTorrance
-    }
 }
 
 pub fn get_brdf(material_sample: &MaterialSample, brdf_type: BrdfType) -> Box<dyn Brdf> {
