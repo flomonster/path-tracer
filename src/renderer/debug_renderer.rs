@@ -7,7 +7,7 @@ use cgmath::*;
 use image::{Rgb, RgbImage};
 use std::collections::HashMap;
 
-pub fn debug_render(scene: &Scene, resolution: &Resolution) {
+pub fn debug_render(scene: &Scene, resolution: Resolution) {
     let buffer_names = vec![
         "normal",
         "albedo",

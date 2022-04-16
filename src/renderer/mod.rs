@@ -34,15 +34,15 @@ impl Renderer {
     const NORMAL_BIAS: f32 = 0.00001;
 
     /// Create new raytracer given resolution
-    pub fn new(config: &Config) -> Self {
+    pub fn new(config: &Config, profile: Profile) -> Self {
         let viewer = if config.viewer {
-            Some(Viewer::create(config.profile.resolution))
+            Some(Viewer::create(profile.resolution))
         } else {
             None
         };
 
         Renderer {
-            profile: config.profile,
+            profile,
             quiet: config.quiet,
             viewer,
         }
