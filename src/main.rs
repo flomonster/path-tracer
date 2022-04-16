@@ -1,13 +1,10 @@
-#[macro_use]
-extern crate clap;
-
 mod config;
 mod renderer;
 mod scene;
 mod utils;
 
-use clap::App;
-use config::Config;
+use clap::Parser;
+use config::{Config, Profile};
 use renderer::debug_renderer::debug_render;
 use renderer::Renderer;
 use scene::Scene;
@@ -25,18 +22,21 @@ fn main() {
 }
 
 fn run() -> Result<(), Box<dyn Error>> {
-    let yaml = load_yaml!("cli.yaml");
-    let config = Config::load(&App::from_yaml(yaml).get_matches())?;
+    let config = Config::parse();
+    let profile = match &config.profile {
+        Some(path) => Profile::load(path)?,
+        None => Default::default(),
+    };
 
     let scene = Scene::load(&config.input)?;
 
-    if config.debug {
-        debug_render(&scene, &config.profile.resolution);
+    if config.debug_textures {
+        debug_render(&scene, profile.resolution);
         return Ok(());
     }
 
     // Send scene to Renderer
-    let renderer = Renderer::new(&config);
+    let renderer = Renderer::new(&config, profile);
     let rendered_image = renderer.render(&scene);
 
     // Save image
@@ -58,7 +58,7 @@ mod tests {
             ..Default::default()
         };
         let scene = Scene::load(&config.input).unwrap();
-        Renderer::new(&config).render(&scene);
+        Renderer::new(&config, Default::default()).render(&scene);
     }
 
     #[test]
