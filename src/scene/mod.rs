@@ -1,43 +1,22 @@
-pub mod model;
+mod gltf;
+pub mod internal;
+mod isf;
 
-use easy_gltf::{Camera, Light};
+pub use gltf::convert_gltf_to_isf;
 
-use kdtree_ray::*;
-use model::Model;
-use rayon::prelude::*;
-use std::error::Error;
-use std::path::Path;
+use std::{
+    error::Error,
+    fs::File,
+    io::BufReader,
+    path::{Path, PathBuf},
+};
 
-#[derive(Debug, Clone)]
-pub struct Scene {
-    pub models: KDtree<Model>,
-    pub camera: Camera,
-    pub lights: Vec<Light>,
-}
+use internal::Scene;
 
-impl Scene {
-    pub fn load<P: AsRef<Path>>(path: P) -> Result<Scene, Box<dyn Error>> {
-        let scenes = easy_gltf::load(path)?;
-
-        if scenes.is_empty() {
-            // TODO: Return error instead
-            panic!("No scene found")
-        }
-
-        let models = KDtree::new(scenes[0].models.par_iter().map(|m| m.into()).collect());
-
-        if scenes[0].cameras.is_empty() {
-            // TODO: Return error instead
-            panic!("No camera found")
-        }
-        let camera = scenes[0].cameras[0].clone();
-
-        let lights = scenes[0].lights.clone();
-
-        Ok(Scene {
-            models,
-            camera,
-            lights,
-        })
-    }
+pub fn load_internal<P: AsRef<Path>>(path: P) -> Result<Scene, Box<dyn Error>> {
+    let file = File::open(&path)?;
+    let reader = BufReader::new(file);
+    let isf_scene = serde_json::from_reader(reader)?;
+    let root_path = PathBuf::from(path.as_ref()).parent().unwrap().to_path_buf();
+    Ok(Scene::load(isf_scene, root_path))
 }

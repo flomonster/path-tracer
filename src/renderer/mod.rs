@@ -7,12 +7,12 @@ mod material_sample;
 mod viewer;
 
 use crate::config::*;
+use crate::scene::internal::Light;
 use crate::utils::{Hit, Ray};
 use crate::Scene;
 use brdf::*;
 use cgmath::*;
 use derivative::Derivative;
-use easy_gltf::Light;
 use image::{Rgb, RgbImage};
 use material_sample::MaterialSample;
 use pbr::ProgressBar;
@@ -50,7 +50,7 @@ impl Renderer {
     const NORMAL_BIAS: f32 = 0.00001;
 
     /// Create new raytracer given resolution
-    pub fn new(config: &Config, profile: Profile) -> Self {
+    pub fn new(config: &RenderConfig, profile: Profile) -> Self {
         let viewer = if config.viewer {
             Some(Viewer::create(profile.resolution))
         } else {
@@ -183,19 +183,19 @@ impl Renderer {
                 Some(res) => res,
             };
 
-            let material = MaterialSample::new(&model.material, hit.tex_coords);
-
-            // Get normal from geometry or texture
-            let n = if let Some(normal) = model.material.get_normal(hit.tex_coords) {
-                normal_tangent_to_world(&normal, &hit)
-            } else {
-                hit.normal
+            let material = match hit {
+                Hit::Sphere { .. } => MaterialSample::simple(model.get_material()),
+                Hit::Triangle { tex_coords, .. } => {
+                    MaterialSample::new(model.get_material(), &tex_coords)
+                }
             };
+
+            let normal = hit.get_normal(model.get_material());
 
             let surface_info = SurfaceInfo {
                 hit,
                 material,
-                normal: n,
+                normal,
             };
 
             let view_direction = -1. * ray.direction;
@@ -262,7 +262,8 @@ impl Renderer {
         // Indirect light computation
         if compute_indirect {
             ray = Ray::new(
-                surface_info.hit.position + surface_info.hit.normal * Self::NORMAL_BIAS,
+                surface_info.hit.get_position()
+                    + surface_info.hit.get_geometric_normal() * Self::NORMAL_BIAS,
                 brdf.sample(surface_info.normal, view_direction),
             );
             let sample_radiance =
@@ -276,16 +277,13 @@ impl Renderer {
 
     fn get_light_info(light: &Light, hit: &Hit, scene: &Scene) -> (Vector3<f32>, Vector3<f32>) {
         match light {
-            Light::Directional {
-                direction,
-                color,
-                intensity,
-            } => {
-                let shadow_ray_ori = hit.position + hit.normal * Self::NORMAL_BIAS;
+            Light::Directional { direction, color } => {
+                let shadow_ray_ori =
+                    hit.get_position() + hit.get_geometric_normal() * Self::NORMAL_BIAS;
                 let shadow_ray_dir = -1. * direction;
                 let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
                 match ray_cast(scene, &shadow_ray) {
-                    None => (*intensity * color, *direction),
+                    None => (*color, *direction),
                     _ => (Vector3::zero(), Vector3::zero()),
                 }
             }
@@ -293,29 +291,29 @@ impl Renderer {
             Light::Point {
                 position,
                 color,
-                intensity,
+                size: _,
             } => {
-                let direction = hit.position - position;
+                let direction = hit.get_position() - position;
                 let dist = direction.magnitude();
                 let direction = direction.normalize();
 
-                let shadow_ray_ori = hit.position + hit.normal * Self::NORMAL_BIAS;
+                let shadow_ray_ori =
+                    hit.get_position() + hit.get_geometric_normal() * Self::NORMAL_BIAS;
                 let shadow_ray_dir = -1. * direction;
                 let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
 
                 let dissipation = 4. * PI * dist * dist; // 4πr^2
-                let light_dissipated = intensity / dissipation * color;
+                let light_dissipated = color / dissipation;
 
                 match ray_cast(scene, &shadow_ray) {
                     Some((shadow_hit, _))
-                        if (shadow_hit.position - hit.position).magnitude() < dist =>
+                        if (shadow_hit.get_position() - hit.get_position()).magnitude() < dist =>
                     {
                         (Vector3::zero(), Vector3::zero())
                     }
                     _ => (light_dissipated, direction),
                 }
             }
-            _ => unimplemented!("Light not implemented: {:?}", light),
         }
     }
 
