@@ -4,10 +4,11 @@ mod scene;
 mod utils;
 
 use clap::Parser;
-use config::{Config, Profile};
+use config::{Config, ConvertConfig, Profile, RenderConfig};
 use renderer::debug_renderer::debug_render;
 use renderer::Renderer;
-use scene::Scene;
+use scene::internal::Scene;
+use scene::{convert_gltf_to_isf, load_internal};
 use std::error::Error;
 use std::process::exit;
 
@@ -23,12 +24,19 @@ fn main() {
 
 fn run() -> Result<(), Box<dyn Error>> {
     let config = Config::parse();
+    match config {
+        Config::Render(render_config) => run_render(render_config),
+        Config::Convert(convert_config) => run_convert(convert_config),
+    }
+}
+
+fn run_render(config: RenderConfig) -> Result<(), Box<dyn Error>> {
     let profile = match &config.profile {
         Some(path) => Profile::load(path)?,
         None => Default::default(),
     };
 
-    let scene = Scene::load(&config.input)?;
+    let scene = load_internal(&config.input)?;
 
     if config.debug_textures {
         debug_render(&scene, profile.resolution);
@@ -44,6 +52,11 @@ fn run() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
+fn run_convert(config: ConvertConfig) -> Result<(), Box<dyn Error>> {
+    convert_gltf_to_isf(config.input, config.output)?;
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -53,11 +66,11 @@ mod tests {
     where
         P: AsRef<Path>,
     {
-        let config = Config {
+        let config = RenderConfig {
             input: path.as_ref().to_path_buf(),
             ..Default::default()
         };
-        let scene = Scene::load(&config.input).unwrap();
+        let scene = load_internal(&config.input).unwrap();
         Renderer::new(&config, Default::default()).render(&scene);
     }
 

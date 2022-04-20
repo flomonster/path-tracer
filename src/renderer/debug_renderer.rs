@@ -1,8 +1,7 @@
-use crate::config::Resolution;
 use crate::renderer::material_sample::MaterialSample;
 use crate::renderer::utils::*;
-use crate::utils::Ray;
-use crate::Scene;
+use crate::utils::{Hit, Ray};
+use crate::{config::Resolution, scene::internal::Scene};
 use cgmath::*;
 use image::{Rgb, RgbImage};
 use std::collections::HashMap;
@@ -80,13 +79,13 @@ fn render_debug_pixels<'a>(scene: &'a Scene, ray: &'a Ray) -> HashMap<&'a str, V
         Some(res) => res,
     };
 
-    let material = MaterialSample::new(&model.material, hit.tex_coords);
-    // Normal
-    let normal = if let Some(normal) = model.material.get_normal(hit.tex_coords) {
-        normal_tangent_to_world(&normal, &hit)
-    } else {
-        hit.normal
+    let material = match hit {
+        Hit::Sphere { .. } => MaterialSample::simple(model.get_material()),
+        Hit::Triangle { tex_coords, .. } => MaterialSample::new(model.get_material(), &tex_coords),
     };
+
+    // Normal
+    let normal = hit.get_normal(model.get_material());
     result.insert("normal", normal);
 
     // Albedo
@@ -101,7 +100,7 @@ fn render_debug_pixels<'a>(scene: &'a Scene, ray: &'a Ray) -> HashMap<&'a str, V
     result.insert("roughness", one * material.roughness);
 
     // ao
-    result.insert("ao", one * material.ambient_occlusion.unwrap_or(0.));
+    result.insert("ao", one * material.opacity);
 
     // emissive
     result.insert("emissive", material.emissive);

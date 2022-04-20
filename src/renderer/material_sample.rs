@@ -1,35 +1,41 @@
 use cgmath::*;
-use easy_gltf::Material;
-use std::sync::Arc;
 
+use crate::scene::internal::Material;
+use derivative::Derivative;
+
+#[derive(Derivative)]
+#[derivative(Default)]
 pub struct MaterialSample {
     pub metalness: f32,
     pub roughness: f32,
+    #[derivative(Default(value = "Zero::zero()"))]
     pub albedo: Vector3<f32>,
-    pub ambient_occlusion: Option<f32>,
+    pub opacity: f32,
+    #[derivative(Default(value = "Zero::zero()"))]
     pub emissive: Vector3<f32>,
+    pub ior: f32,
 }
 
 impl MaterialSample {
-    pub fn new(material: &Arc<Material>, tex_coords: Vector2<f32>) -> Self {
+    pub fn new(material: &Material, tex_coords: &Vector2<f32>) -> Self {
         Self {
-            metalness: material.get_metallic(tex_coords),
+            metalness: material.get_metalness(tex_coords),
             roughness: material.get_roughness(tex_coords).max(0.0001), // roughness = 0 breaks the maths (in NDF function)
-            albedo: material.get_base_color(tex_coords),
-            ambient_occlusion: material.get_occlusion(tex_coords),
+            albedo: material.get_albedo(tex_coords),
+            opacity: material.get_opacity(tex_coords),
             emissive: material.get_emissive(tex_coords),
+            ior: material.ior,
         }
     }
-}
 
-impl Default for MaterialSample {
-    fn default() -> Self {
+    pub fn simple(material: &Material) -> Self {
         Self {
-            metalness: 0.,
-            roughness: 0.,
-            albedo: Zero::zero(),
-            ambient_occlusion: None,
-            emissive: Zero::zero(),
+            metalness: material.get_simple_metalness(),
+            roughness: material.get_simple_roughness().max(0.0001), // roughness = 0 breaks the maths (in NDF function)
+            albedo: material.get_simple_albedo(),
+            opacity: material.get_simple_opacity(),
+            emissive: material.get_simple_emissive(),
+            ior: material.ior,
         }
     }
 }

@@ -11,8 +11,17 @@ use std::path::PathBuf;
 #[derivative(Default)]
 #[clap(author, version)]
 /// Path-trace awesome things
-pub struct Config {
-    /// Input file name GLTF format
+pub enum Config {
+    #[derivative(Default)]
+    Render(RenderConfig),
+    Convert(ConvertConfig),
+}
+
+#[derive(Parser, Debug, Clone, Derivative)]
+#[derivative(Default)]
+#[clap(about, long_about = "Path-trace awesome things")]
+pub struct RenderConfig {
+    /// Input file name ISF format
     pub input: PathBuf,
     /// Output image name
     #[clap(long, short, env, default_value = "render.png")]
@@ -30,4 +39,14 @@ pub struct Config {
     /// A path to the yaml file containing all the rendering profile information
     #[clap(long, short, env)]
     pub profile: Option<PathBuf>,
+}
+
+#[derive(Parser, Debug, Clone, Derivative)]
+#[derivative(Default)]
+#[clap(about, long_about = "Convert scenes into ISF format")]
+pub struct ConvertConfig {
+    /// Input file name
+    pub input: PathBuf,
+    /// Output directory
+    pub output: PathBuf,
 }

@@ -1,22 +1,14 @@
 use super::Vertex;
-use crate::utils::{Hit, Intersectable, Ray};
+use crate::{
+    scene::isf,
+    utils::{Hit, Intersectable, Ray},
+};
 use cgmath::*;
-use easy_gltf::model::Triangle as EasyTriangle;
 use kdtree_ray::*;
 use std::ops::{Index, IndexMut};
 
 #[derive(Clone, Debug, Default, PartialEq)]
 pub struct Triangle(Vertex, Vertex, Vertex);
-
-impl From<EasyTriangle> for Triangle {
-    fn from(triangle: EasyTriangle) -> Self {
-        Triangle(
-            Vertex::from(&triangle[0]),
-            Vertex::from(&triangle[1]),
-            Vertex::from(&triangle[2]),
-        )
-    }
-}
 
 impl Index<usize> for Triangle {
     type Output = Vertex;
@@ -79,7 +71,7 @@ impl Intersectable<Option<Hit>> for Triangle {
             return None;
         }
 
-        Some(Hit::new(
+        Some(Hit::new_triangle(
             (*self).clone(),
             dist,
             ray.origin + ray.direction * dist,
@@ -128,8 +120,17 @@ impl BoundingBox for Triangle {
     }
 }
 
+impl From<isf::Triangle> for Triangle {
+    fn from(isf: isf::Triangle) -> Self {
+        Self(isf.0.into(), isf.1.into(), isf.2.into())
+    }
+}
+
 #[cfg(test)]
 mod tests {
+
+    use crate::utils;
+
     use super::*;
     use std::env;
     use std::fs;
@@ -217,6 +218,13 @@ mod tests {
         Test { ray, triangle, hit }
     }
 
+    fn unwrap_hit_tex_coords(hit: &utils::Hit) -> Vector2<f32> {
+        match hit {
+            utils::Hit::Triangle { tex_coords, .. } => *tex_coords,
+            _ => panic!("Hit is not a triangle"),
+        }
+    }
+
     #[test]
     fn hit() {
         let home = env::var("CARGO_MANIFEST_DIR").unwrap();
@@ -234,9 +242,10 @@ mod tests {
             assert!(hit.is_some());
             let hit = hit.unwrap();
             let test_hit = test.hit.unwrap();
-            assert!((hit.dist - test_hit.dist).abs() < 0.00001);
-            assert!((hit.tex_coords[0] - test_hit.u).abs() < 0.00001);
-            assert!((hit.tex_coords[1] - test_hit.v).abs() < 0.00001);
+            assert!((hit.get_dist() - test_hit.dist).abs() < 0.00001);
+            let tex_coords = unwrap_hit_tex_coords(&hit);
+            assert!((tex_coords[0] - test_hit.u).abs() < 0.00001);
+            assert!((tex_coords[1] - test_hit.v).abs() < 0.00001);
         }
     }
 
