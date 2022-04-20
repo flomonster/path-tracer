@@ -134,10 +134,11 @@ impl Material {
             Albedo::Value(value) => *value,
             Albedo::Texture(texture) => {
                 let pixel = Self::get_pixel(uv, texture);
+                // Convert sRGB to linear
                 Vector3::new(
-                    pixel[0] as f32 / 255.0,
-                    pixel[1] as f32 / 255.0,
-                    pixel[2] as f32 / 255.0,
+                    (pixel[0] as f32 / 255.0).powf(2.2),
+                    (pixel[1] as f32 / 255.0).powf(2.2),
+                    (pixel[2] as f32 / 255.0).powf(2.2),
                 )
             }
         }
