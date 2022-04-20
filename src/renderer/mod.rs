@@ -232,12 +232,6 @@ impl Renderer {
         let mut throughput = rad_info.throughput;
         let mut ray = Default::default();
 
-        // AO
-        // *color += throughput.mul_element_wise(Self::compute_ambient_occlusion(
-        //     material.albedo,
-        //     material.ambient_occlusion,
-        // ));
-
         // Emissive
         color += throughput.mul_element_wise(surface_info.material.emissive);
 
@@ -334,17 +328,6 @@ impl Renderer {
             (color.y * 255.) as u8,
             (color.z * 255.) as u8,
         ])
-    }
-
-    fn _compute_ambient_occlusion(
-        albedo: Vector3<f32>,
-        ambient_occlusion: Option<f32>,
-    ) -> Vector3<f32> {
-        if let Some(ambient_occlusion) = ambient_occlusion {
-            0.03 * ambient_occlusion * albedo
-        } else {
-            Zero::zero()
-        }
     }
 }
 
