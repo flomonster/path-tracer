@@ -166,6 +166,7 @@ pub fn convert_gltf_to_isf<P: AsRef<Path>>(input: P, output: P) -> Result<(), Bo
         models,
         camera,
         lights,
+        ..Default::default()
     };
 
     // Save scene

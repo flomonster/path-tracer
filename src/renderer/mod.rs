@@ -177,8 +177,7 @@ impl Renderer {
             // Test intersection
             let (hit, model) = match ray_cast(scene, &ray) {
                 None => {
-                    let background_color: Vector3<f32> = profile.background_color.into();
-                    return rad_info.color + rad_info.throughput.mul_element_wise(background_color);
+                    return rad_info.color + rad_info.throughput.mul_element_wise(scene.background);
                 }
                 Some(res) => res,
             };

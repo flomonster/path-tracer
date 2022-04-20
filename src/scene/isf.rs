@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 /// Custom format of a scene
 pub struct Scene {
     /// Models in the scene
@@ -9,9 +9,11 @@ pub struct Scene {
     pub camera: Camera,
     /// Lights in the scene
     pub lights: Vec<Light>,
+    /// Background color of the scene
+    pub background: [f32; 3],
 }
 
-#[derive(Deserialize, Serialize, Clone, Debug)]
+#[derive(Deserialize, Serialize, Clone, Debug, Default)]
 /// Custom format of a camera
 pub struct Camera {
     pub transform: [[f32; 4]; 4],
@@ -51,6 +53,7 @@ pub struct Vertex {
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
+#[serde(tag = "type")]
 /// Custom format of a light
 pub enum Light {
     Point {

@@ -7,25 +7,10 @@ use image::{Rgb, RgbImage};
 use std::collections::HashMap;
 
 pub fn debug_render(scene: &Scene, resolution: Resolution) {
-    let buffer_names = vec![
-        "normal",
-        "albedo",
-        "metalness",
-        "roughness",
-        "ao",
-        "emissive",
-    ];
-
     // Create buffers
     let mut buffers = HashMap::new();
     let width = resolution.width;
     let height = resolution.height;
-    for buffer_name in buffer_names {
-        buffers.insert(
-            buffer_name,
-            vec![Vector3::<f32>::zero(); (width * height) as usize],
-        );
-    }
 
     // Fill buffers
     let width_f = width as f32;
@@ -49,7 +34,10 @@ pub fn debug_render(scene: &Scene, resolution: Resolution) {
 
             for (buffer_name, pixel) in pixels {
                 let index = (x * height + y) as usize;
-                buffers.get_mut(buffer_name).unwrap()[index] = pixel;
+                buffers
+                    .entry(buffer_name)
+                    .or_insert_with(|| vec![Vector3::<f32>::zero(); (width * height) as usize])
+                    [index] = pixel;
             }
         }
     }
@@ -71,7 +59,7 @@ pub fn debug_render(scene: &Scene, resolution: Resolution) {
     }
 }
 
-fn render_debug_pixels<'a>(scene: &'a Scene, ray: &'a Ray) -> HashMap<&'a str, Vector3<f32>> {
+fn render_debug_pixels(scene: &Scene, ray: &Ray) -> HashMap<&'static str, Vector3<f32>> {
     let mut result = HashMap::new();
     // Cast ray
     let (hit, model) = match ray_cast(scene, ray) {
@@ -99,11 +87,14 @@ fn render_debug_pixels<'a>(scene: &'a Scene, ray: &'a Ray) -> HashMap<&'a str, V
     // roughness
     result.insert("roughness", one * material.roughness);
 
-    // ao
-    result.insert("ao", one * material.opacity);
+    // opacity
+    result.insert("opacity", one * material.opacity);
 
     // emissive
     result.insert("emissive", material.emissive);
+
+    // ior
+    result.insert("ior", one * material.ior / 3.);
 
     result
 }
