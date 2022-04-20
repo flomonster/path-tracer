@@ -23,7 +23,7 @@ impl Intersectable<Option<Hit>> for Model {
     fn intersect(&self, ray: &Ray) -> Option<Hit> {
         match self {
             Model::Sphere { radius, center, .. } => {
-                let ray_to_center = center - ray.origin;
+                let ray_to_center = ray.origin - center;
                 let a = ray.direction.dot(ray.direction);
                 let b = 2.0 * ray_to_center.dot(ray.direction);
                 let c = ray_to_center.dot(ray_to_center) - radius * radius;
