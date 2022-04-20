@@ -76,16 +76,16 @@ mod tests {
 
     #[test]
     fn cube() {
-        test_scene("tests/scenes/cube.glb");
+        test_scene("tests/scenes/isf/cube/scene.isf");
     }
 
     #[test]
     fn reflection() {
-        test_scene("tests/scenes/reflection.glb");
+        test_scene("tests/scenes/isf/reflection/scene.isf");
     }
 
     #[test]
     fn head() {
-        test_scene("tests/scenes/head.glb");
+        test_scene("tests/scenes/isf/head/scene.isf");
     }
 }

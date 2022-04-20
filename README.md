@@ -17,14 +17,17 @@ This project is an implementation of Monte Carlo path tracing in **Rust**.
 
 ## How to use ?
 
-The renderer takes as input a scene in **glTF** format.
+The renderer takes a custom Internal Scene Format (isf) as input.
+
+But don't worry we're able to convert **glTF** scenes into **isf**.
 
 Minimal command line:
 
 ```sh
-path-tracer --help # Prompt all available options
-path-tracer scene.gltf -o my-render.png # Render a scene with default profile
-path-tracer -p profile.yml scene.gltf # Render a scene with a custom profile
+path-tracer convert --help # Prompt all available options for scene conversion
+path-tracer render --help # Prompt all available options for rendering
+path-tracer convert my_scene.glb my_scene_isf/ # Convert a gltf scene into an isf
+path-tracer render scene.isf -o my-render.png -p profile.yml # Render a scene with a custom profile
 ```
 
 ## Profile
@@ -39,7 +42,6 @@ Profile files are used to configure the renderer behaviour.
 | `bounces` | Maximum number of bounces per sample | `4` |
 | `brdf` | Which brdf tu use (`COOK_TORRANCE`) | `COOK_TORRANCE` |
 | `tonemap` | Which color tone map tu use (`REINHARD`, `FILMIC`, `ACES`) | `FILMIC` |
-| `background_color` | Color of the brackground (in RGB [`0.`:`MAX_FLOAT`]) | `[0., 0., 0.]` |
 | `nb_threads` | Number of threads to use (`0` will use the maximum available threads) | `0` |
 
 Here is a profile example.
@@ -52,7 +54,6 @@ samples: 64 # Number of sample ray throw by pixel
 bounces: 4 # Maximum number of bounces per sample
 brdf: COOK_TORRANCE # Which brdf to use
 tonemap: FILMIC # Which color tone map to use
-background_color: [0.051, 0.051, 0.051] # Color of the background
 nb_threads: 8 # Number of threads to use (0 will use the maximum available threads)
 ```
 

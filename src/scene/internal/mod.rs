@@ -8,6 +8,7 @@ mod vertex;
 
 use std::path::PathBuf;
 
+use cgmath::Vector3;
 use kdtree_ray::KDtree;
 
 pub use camera::Camera;
@@ -26,6 +27,7 @@ pub struct Scene {
     pub models: KDtree<Model>,
     pub camera: Camera,
     pub lights: Vec<Light>,
+    pub background: Vector3<f32>,
 }
 
 impl Scene {
@@ -40,6 +42,7 @@ impl Scene {
             ),
             camera: isf.camera.into(),
             lights: isf.lights.into_iter().map(|l| l.into()).collect(),
+            background: isf.background.into(),
         }
     }
 }
