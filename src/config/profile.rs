@@ -23,7 +23,7 @@ pub struct Profile {
     #[serde(default)]
     pub tonemap: TonemapType,
     #[serde(default)]
-    pub nb_treads: usize,
+    pub nb_threads: usize,
 }
 
 impl Profile {

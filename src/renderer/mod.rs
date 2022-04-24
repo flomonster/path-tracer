@@ -94,7 +94,7 @@ impl Renderer {
 
         // Create thread pool
         let pool = ThreadPoolBuilder::new()
-            .num_threads(profile.nb_treads)
+            .num_threads(profile.nb_threads)
             .build()
             .unwrap();
 
