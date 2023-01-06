@@ -291,31 +291,11 @@ impl Renderer {
                 let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
 
                 // TODO: no shadow for inner transparent objects
-
-                let mut result_color = Vector3::zero();
-                let mut result_dir = Vector3::zero();
-                loop { // FIXME: need max bounce limit
-                    match ray_cast(scene, &shadow_ray) {
-                        None => {
-                            result_color = *color;
-                            result_dir = *direction;
-                            break;
-                        },
-                        Some((shadow_hit, shadow_model)) => {
-                            let material = MaterialSample::new(&shadow_model.get_material(), shadow_hit.tex_coords);
-                            if material.opacity < 1. && rand::random::<f32>() >= material.opacity {
-                                shadow_ray = Ray::new(shadow_hit.get_position() + shadow_ray.direction * Self::NORMAL_BIAS * 2., shadow_ray.direction);
-                            }
-                            else {
-                                result_color = Vector3::zero();
-                                result_dir = Vector3::zero();
-                                break;
-                            }
-                            
-                        },
-                    }  
+                // FIXME: check opacity
+                match ray_cast(scene, &shadow_ray) {
+                    None => (*color, *direction),
+                    _ => (Vector3::zero(), Vector3::zero()),
                 }
-                (result_color, result_dir)
             }
 
             Light::Point {
