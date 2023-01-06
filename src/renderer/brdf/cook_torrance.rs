@@ -1,7 +1,7 @@
 use super::transform_to_world;
 use crate::renderer::brdf::Brdf;
+use crate::renderer::utils::reflection;
 use crate::renderer::MaterialSample;
-use crate::utils::reflection;
 use cgmath::*;
 use std::f32::consts::PI;
 

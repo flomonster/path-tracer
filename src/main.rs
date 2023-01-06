@@ -1,7 +1,6 @@
 mod config;
 mod renderer;
 mod scene;
-mod utils;
 
 use clap::Parser;
 use config::{Config, ConvertConfig, Profile, RenderConfig};

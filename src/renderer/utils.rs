@@ -1,21 +1,21 @@
+use super::Hit;
+use super::Intersectable;
+use super::Ray;
 use crate::scene::internal::Model;
-use crate::utils::{Hit, Intersectable, Ray};
 use crate::Scene;
 use cgmath::*;
 use std::sync::Arc;
 
-pub fn ray_cast(scene: &Scene, ray: &Ray) -> Option<(Hit, Arc<Model>)> {
-    let mut best = None;
+/// Return all the hits of a ray in a scene sorted by distance
+pub fn ray_cast(scene: &Scene, ray: &Ray) -> Vec<(Hit, Arc<Model>)> {
+    let mut res: Vec<_> = vec![];
     for model in scene.models.intersect(&ray.origin, &ray.direction) {
-        if let Some(hit) = model.intersect(ray) {
-            best = match best {
-                None => Some((hit, model)),
-                Some((best_hit, _)) if best_hit.get_dist() > hit.get_dist() => Some((hit, model)),
-                _ => best,
-            }
+        for hit in model.intersect(ray) {
+            res.push((hit, model.clone()));
         }
     }
-    best
+    res.sort_by(|(hit1, _), (hit2, _)| hit1.get_dist().partial_cmp(&hit2.get_dist()).unwrap());
+    res
 }
 
 pub fn russian_roulette(throughput: &mut Vector3<f32>) -> bool {
@@ -26,4 +26,9 @@ pub fn russian_roulette(throughput: &mut Vector3<f32>) -> bool {
     *throughput *= 1. / rr_proba;
 
     rand::random::<f32>() > rr_proba
+}
+
+/// Compute reflection vector given incident and normal vectors
+pub fn reflection(i: &Vector3<f32>, n: &Vector3<f32>) -> Vector3<f32> {
+    2. * i.dot(*n).max(0.) * n - i
 }

@@ -1,14 +1,14 @@
 pub mod brdf;
 pub mod debug_renderer;
+mod hit;
+mod material_sample;
+mod ray;
 pub mod tonemap;
 pub mod utils;
-
-mod material_sample;
 mod viewer;
 
 use crate::config::*;
 use crate::scene::internal::Light;
-use crate::utils::{Hit, Ray};
 use crate::Scene;
 use brdf::*;
 use cgmath::*;
@@ -23,6 +23,9 @@ use std::time::Instant;
 use tonemap::*;
 use utils::*;
 use viewer::Viewer;
+
+pub use hit::Hit;
+pub use ray::{Intersectable, Ray};
 
 pub struct Renderer {
     profile: Profile,
@@ -172,63 +175,52 @@ impl Renderer {
     /// Render the color of a pixel given a ray and the scene
     fn render_pixel(profile: &Profile, scene: &Scene, mut ray: Ray) -> Vector3<f32> {
         let mut rad_info = RadianceInfo::default();
-        let mut bounce = 0;
 
-        loop {
+        for bounce in 0..(profile.bounces + 1) {
             // Test intersection
-            let (hit, model) = match ray_cast(scene, &ray) {
-                None => {
-                    return rad_info.color + rad_info.throughput.mul_element_wise(scene.background);
+            let intersections = ray_cast(scene, &ray);
+            // Check if we hit nothing (background)
+            if intersections.is_empty() {
+                return rad_info.color + rad_info.throughput.mul_element_wise(scene.background);
+            }
+
+            let mut surface_info = None;
+            for (hit, model) in intersections {
+                let material_sample = hit.get_material_sample(&model);
+                let normal = hit.get_normal(model.get_material());
+                let opacity = material_sample.opacity;
+
+                surface_info = Some(SurfaceInfo {
+                    hit,
+                    material: material_sample,
+                    normal,
+                });
+
+                // Alpha transparency
+                if opacity >= 1. || rand::random::<f32>() < opacity {
+                    // Consider the surface as opaque and stop iterating over the intersections
+                    break;
                 }
-                Some(res) => res,
-            };
-
-            let material = match hit {
-                Hit::Sphere { .. } => MaterialSample::simple(model.get_material()),
-                Hit::Triangle { tex_coords, .. } => {
-                    MaterialSample::new(model.get_material(), &tex_coords)
-                }
-            };
-
-            let normal = hit.get_normal(model.get_material());
-
-            let surface_info = SurfaceInfo {
-                hit,
-                material,
-                normal,
-            };
+            }
 
             let view_direction = -1. * ray.direction;
-
-            // Alpha transparency
-            let opacity = surface_info.material.opacity;
-            if opacity < 1. && rand::random::<f32>() >= opacity {
-                ray = Ray::new(surface_info.hit.get_position() + ray.direction * Self::NORMAL_BIAS, ray.direction);
-                continue;
-            }
 
             (rad_info, ray) = Self::compute_radiance(
                 profile,
                 scene,
                 rad_info,
-                &surface_info,
+                &surface_info.unwrap(),
                 view_direction,
                 bounce < profile.bounces,
             );
 
             if rad_info.throughput.magnitude2() < 0.00001 {
-                break;
+                return rad_info.color;
             }
 
             if bounce > 3 && russian_roulette(&mut rad_info.throughput) {
-                break;
+                return rad_info.color;
             }
-
-            if bounce > profile.bounces {
-                break;
-            }
-
-            bounce += 1;
         }
         rad_info.color
     }
@@ -282,6 +274,7 @@ impl Renderer {
         (RadianceInfo { color, throughput }, ray)
     }
 
+    /// Get the light radiance and direction
     fn get_light_info(light: &Light, hit: &Hit, scene: &Scene) -> (Vector3<f32>, Vector3<f32>) {
         match light {
             Light::Directional { direction, color } => {
@@ -291,11 +284,16 @@ impl Renderer {
                 let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
 
                 // TODO: no shadow for inner transparent objects
-                // FIXME: check opacity
-                match ray_cast(scene, &shadow_ray) {
-                    None => (*color, *direction),
-                    _ => (Vector3::zero(), Vector3::zero()),
+                // Atenuate the light by the opacity of occluders objects
+                let mut color = *color;
+                for (shadow_hit, shadow_model) in ray_cast(scene, &shadow_ray) {
+                    let material_sample = shadow_hit.get_material_sample(&shadow_model);
+                    color *= 1. - material_sample.opacity;
+                    if color.sum() == 0. {
+                        break;
+                    }
                 }
+                (color, *direction)
             }
 
             Light::Point {
@@ -313,16 +311,21 @@ impl Renderer {
                 let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
 
                 let dissipation = 4. * PI * dist * dist; // 4πr^2
-                let light_dissipated = color / dissipation;
 
-                match ray_cast(scene, &shadow_ray) {
-                    Some((shadow_hit, _))
-                        if (shadow_hit.get_position() - hit.get_position()).magnitude() < dist =>
-                    {
-                        (Vector3::zero(), Vector3::zero())
+                // Atenuate the light by the opacity of occluders objects
+                let mut light_dissipated = color / dissipation;
+                for (shadow_hit, shadow_model) in ray_cast(scene, &shadow_ray) {
+                    if (shadow_hit.get_position() - hit.get_position()).magnitude() > dist {
+                        // The intersected object is behind the light
+                        break;
                     }
-                    _ => (light_dissipated, direction),
+                    let material_sample = hit.get_material_sample(&shadow_model);
+                    light_dissipated *= 1. - material_sample.opacity;
+                    if light_dissipated.sum() == 0. {
+                        break;
+                    }
                 }
+                (light_dissipated, direction)
             }
         }
     }

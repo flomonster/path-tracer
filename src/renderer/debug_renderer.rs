@@ -1,10 +1,12 @@
 use crate::renderer::material_sample::MaterialSample;
 use crate::renderer::utils::*;
-use crate::utils::{Hit, Ray};
 use crate::{config::Resolution, scene::internal::Scene};
 use cgmath::*;
 use image::{Rgb, RgbImage};
 use std::collections::HashMap;
+
+use super::Hit;
+use super::Ray;
 
 pub fn debug_render(scene: &Scene, resolution: Resolution) {
     // Create buffers
@@ -63,8 +65,8 @@ fn render_debug_pixels(scene: &Scene, ray: &Ray) -> HashMap<&'static str, Vector
     let mut result = HashMap::new();
     // Cast ray
     let (hit, model) = match ray_cast(scene, ray) {
-        None => return result,
-        Some(res) => res,
+        res if res.is_empty() => return result,
+        res => res[0].clone(),
     };
 
     let material = match hit {
