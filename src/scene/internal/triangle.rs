@@ -1,7 +1,7 @@
 use super::Vertex;
 use crate::{
+    renderer::{Hit, Intersectable, Ray},
     scene::isf,
-    utils::{Hit, Intersectable, Ray},
 };
 use cgmath::*;
 use kdtree_ray::*;
@@ -128,9 +128,6 @@ impl From<isf::Triangle> for Triangle {
 
 #[cfg(test)]
 mod tests {
-
-    use crate::utils;
-
     use super::*;
     use std::env;
     use std::fs;
@@ -139,7 +136,7 @@ mod tests {
     use yaml_rust::YamlLoader;
 
     #[derive(Debug)]
-    struct Hit {
+    struct TriangleHit {
         dist: f32,
         u: f32,
         v: f32,
@@ -149,7 +146,7 @@ mod tests {
     struct Test {
         pub ray: Ray,
         pub triangle: Triangle,
-        pub hit: Option<Hit>,
+        pub hit: Option<TriangleHit>,
     }
 
     fn array_to_vector3(array: &yaml::Array) -> Vector3<f32> {
@@ -184,7 +181,7 @@ mod tests {
                             _ => dist = value.as_f64().unwrap() as f32,
                         }
                     }
-                    hit = Some(Hit { dist, u, v });
+                    hit = Some(TriangleHit { dist, u, v });
                 }
                 "ray" => {
                     for (key, value) in value {
@@ -218,9 +215,9 @@ mod tests {
         Test { ray, triangle, hit }
     }
 
-    fn unwrap_hit_tex_coords(hit: &utils::Hit) -> Vector2<f32> {
+    fn unwrap_hit_tex_coords(hit: &Hit) -> Vector2<f32> {
         match hit {
-            utils::Hit::Triangle { tex_coords, .. } => *tex_coords,
+            Hit::Triangle { tex_coords, .. } => *tex_coords,
             _ => panic!("Hit is not a triangle"),
         }
     }

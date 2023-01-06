@@ -21,3 +21,6 @@ tags
 # Profiles
 **/*.yml
 **/*.yaml
+
+# Envs
+*.nix

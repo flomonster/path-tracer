@@ -1,4 +1,5 @@
-use crate::scene::internal::{Material, Triangle};
+use super::material_sample::MaterialSample;
+use crate::scene::internal::{Material, Model, Triangle};
 use cgmath::*;
 
 #[derive(Debug, Clone, PartialEq)]
@@ -65,6 +66,15 @@ impl Hit {
                 }
             }
             Hit::Sphere { normal, .. } => *normal,
+        }
+    }
+
+    pub fn get_material_sample(&self, model: &Model) -> MaterialSample {
+        match self {
+            Hit::Sphere { .. } => MaterialSample::simple(model.get_material()),
+            Hit::Triangle { tex_coords, .. } => {
+                MaterialSample::new(model.get_material(), tex_coords)
+            }
         }
     }
 

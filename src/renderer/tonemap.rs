@@ -52,8 +52,8 @@ fn aces(color: Vector3<f32>) -> Vector3<f32> {
     let denom = color.mul_element_wise(c * color + d) + e;
     let res = num.div_element_wise(denom);
     Vector3::new(
-        res.x.max(0.).min(1.),
-        res.y.max(0.).min(1.),
-        res.z.max(0.).min(1.),
+        res.x.clamp(0., 1.),
+        res.y.clamp(0., 1.),
+        res.z.clamp(0., 1.),
     )
 }
