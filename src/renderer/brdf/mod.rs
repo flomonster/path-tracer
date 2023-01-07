@@ -43,11 +43,10 @@ pub fn transform_to_world(vec: Vector3<f32>, n: Vector3<f32>) -> Vector3<f32> {
     )
 }
 
-#[derive(Derivative, Copy, Debug, Clone, Deserialize)]
-#[derivative(Default)]
+#[derive(Default, Copy, Debug, Clone, Deserialize)]
 pub enum BrdfType {
     #[serde(rename = "COOK_TORRANCE")]
-    #[derivative(Default)]
+    #[default]
     CookTorrance,
 }
 

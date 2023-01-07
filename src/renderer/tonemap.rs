@@ -1,20 +1,15 @@
 use cgmath::*;
 use serde::Deserialize;
 
-#[derive(Copy, Debug, Clone, Deserialize)]
+#[derive(Default, Copy, Debug, Clone, Deserialize)]
 pub enum TonemapType {
     #[serde(rename = "REINHARD")]
     Reinhard,
     #[serde(rename = "FILMIC")]
+    #[default]
     Filmic,
     #[serde(rename = "ACES")]
     Aces,
-}
-
-impl Default for TonemapType {
-    fn default() -> Self {
-        Self::Filmic
-    }
 }
 
 pub fn tonemap(tonemap_type: TonemapType, color: Vector3<f32>) -> Vector3<f32> {

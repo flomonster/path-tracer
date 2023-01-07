@@ -58,10 +58,16 @@ fn run_convert(config: ConvertConfig) -> Result<(), Box<dyn Error>> {
 
 #[cfg(test)]
 mod tests {
+    use image::EncodableLayout;
+    use sha1::{Sha1, Digest, digest::Update};
+
+    use crate::{config::Resolution};
+
     use super::*;
     use std::path::Path;
+    use std::str;
 
-    fn test_scene<P>(path: P)
+    fn test_scene<P>(path: P, expected_hash: &str)
     where
         P: AsRef<Path>,
     {
@@ -70,21 +76,34 @@ mod tests {
             ..Default::default()
         };
         let scene = load_internal(&config.input).unwrap();
-        Renderer::new(&config, Default::default()).render(&scene);
+        let profile = Profile {
+            resolution: Resolution{ width: 800, height: 600 },
+            bounces: 4,
+            samples: 16,
+            ..Default::default()
+        };
+        let image = Renderer::new(&config, profile).render(&scene);
+        let hash = Sha1::new().chain(image.as_bytes()).finalize();
+        assert_eq!(str::from_utf8(&hash).unwrap(), expected_hash);
     }
 
     #[test]
     fn cube() {
-        test_scene("tests/scenes/cube/scene.isf");
+        test_scene("tests/scenes/cube/scene.isf", "toto");
     }
 
     #[test]
     fn reflection() {
-        test_scene("tests/scenes/reflection/scene.isf");
+        test_scene("tests/scenes/reflection/scene.isf", "toto");
     }
 
     #[test]
     fn head() {
-        test_scene("tests/scenes/head/scene.isf");
+        test_scene("tests/scenes/head/scene.isf", "toto");
+    }
+
+    #[test]
+    fn spheres() {
+        test_scene("tests/scenes/spheres/scene.isf", "toto");
     }
 }
