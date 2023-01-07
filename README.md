@@ -66,6 +66,7 @@ nb_threads: 8 # Number of threads to use (0 will use the maximum available threa
 - [x] Importance sampling
 - [x] Various Tone mapping
 - [x] Viewer
-- [ ] Transparency (alpha & refraction)
+- [x] Alpha Transparency
+- [ ] Snell Refraction
 - [ ] BSSRDF
 - [ ] ...
