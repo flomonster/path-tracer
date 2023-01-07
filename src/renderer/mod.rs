@@ -16,8 +16,10 @@ use derivative::Derivative;
 use image::{Rgb, RgbImage};
 use material_sample::MaterialSample;
 use pbr::ProgressBar;
-use rayon::ThreadPoolBuilder;
+use rayon::prelude::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
 use std::f32::consts::PI;
+use std::sync::atomic::AtomicBool;
+use std::sync::atomic::Ordering;
 use std::sync::{Arc, Mutex};
 use std::time::Instant;
 use tonemap::*;
@@ -73,8 +75,7 @@ impl Renderer {
         let height = self.profile.resolution.height;
 
         // Buffer containing the rendered image
-        let buffer = vec![Vector3::<f32>::zero(); (width * height) as usize];
-        let buffer = Arc::new(Mutex::new(buffer));
+        let mut buffer = vec![Vector3::<f32>::zero(); (width * height) as usize];
 
         // Create progress bar (if quiet isn't activated)
         let mut pb = if self.quiet {
@@ -93,53 +94,42 @@ impl Renderer {
         let image_ratio = width_f / height_f;
 
         let profile = self.profile;
+        let viewer_enabled = AtomicBool::new(self.viewer.is_some());
         let sender = Arc::new(Mutex::new(self.viewer.as_ref().map(|v| v.sender.clone())));
-
-        // Create thread pool
-        let pool = ThreadPoolBuilder::new()
-            .num_threads(profile.nb_threads)
-            .build()
-            .unwrap();
 
         let now = Instant::now();
 
         for current_sample in 1..(profile.samples + 1) {
-            pool.scope(|s| {
-                for x in 0..width {
-                    for y in 0..height {
-                        let buffer = buffer.clone();
-                        let sender = sender.clone();
-                        s.spawn(move |_| {
-                            let mut screen_x = x as f32 + rand::random::<f32>();
-                            screen_x = screen_x / width_f * 2. - 1.;
-                            screen_x *= Rad::tan(scene.camera.fov / 2.) * image_ratio;
+            buffer.par_iter_mut().enumerate().for_each(|(i, pixel)| {
+                let x = i as u32 % width;
+                let y = i as u32 / width;
 
-                            let mut screen_y = y as f32 + rand::random::<f32>();
-                            screen_y = 1. - screen_y / height_f * 2.;
-                            screen_y *= Rad::tan(scene.camera.fov / 2.);
+                let mut screen_x = x as f32 + rand::random::<f32>();
+                screen_x = screen_x / width_f * 2. - 1.;
+                screen_x *= Rad::tan(scene.camera.fov / 2.) * image_ratio;
 
-                            let ray_dir = Vector3::new(screen_x, screen_y, -1.).normalize();
-                            let ray_dir = scene.camera.apply_transform_vector(&ray_dir);
-                            let ray = Ray::new(scene.camera.position(), ray_dir);
+                let mut screen_y = y as f32 + rand::random::<f32>();
+                screen_y = 1. - screen_y / height_f * 2.;
+                screen_y *= Rad::tan(scene.camera.fov / 2.);
 
-                            // Compute pixel color
-                            let color = Self::render_pixel(&profile, scene, ray);
+                let ray_dir = Vector3::new(screen_x, screen_y, -1.).normalize();
+                let ray_dir = scene.camera.apply_transform_vector(&ray_dir);
+                let ray = Ray::new(scene.camera.position(), ray_dir);
 
-                            // Update buffer
-                            let mut buffer = buffer.lock().unwrap();
-                            let buffer_pos = (x * height + y) as usize;
-                            buffer[buffer_pos] += color;
+                // Compute pixel color
+                let color = Self::render_pixel(&profile, scene, ray);
 
-                            // Send it to viewer
-                            let mut sender_guard = sender.lock().unwrap();
-                            if let Some(sender) = &*sender_guard {
-                                let color = buffer[buffer_pos] / current_sample as f32;
-                                let color = Self::post_processing(&profile, color);
-                                if Viewer::send_pixel_update(sender, x, y, color.0).is_err() {
-                                    *sender_guard = None;
-                                }
-                            }
-                        });
+                // Update my pixel
+                *pixel += color;
+
+                // Send it to viewer
+                if viewer_enabled.load(Ordering::Relaxed) {
+                    let sender_guard = sender.lock().unwrap();
+                    let sender = sender_guard.as_ref().unwrap();
+                    let color = *pixel / current_sample as f32;
+                    let color = Self::post_processing(&profile, color);
+                    if Viewer::send_pixel_update(sender, x, y, color.0).is_err() {
+                        viewer_enabled.store(false, Ordering::Relaxed);
                     }
                 }
             });
@@ -151,13 +141,12 @@ impl Renderer {
 
         // Final pass
         let mut image = RgbImage::new(width, height);
-        let buffer = buffer.lock().unwrap();
         for x in 0..width {
             for y in 0..height {
                 // Post process
                 let color = Self::post_processing(
                     &self.profile,
-                    buffer[(x * height + y) as usize] / profile.samples as f32,
+                    buffer[(x + y * width) as usize] / profile.samples as f32,
                 );
 
                 // Set pixel color into image

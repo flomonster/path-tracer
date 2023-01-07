@@ -42,7 +42,6 @@ Profile files are used to configure the renderer behaviour.
 | `bounces` | Maximum number of bounces per sample | `4` |
 | `brdf` | Which brdf tu use (`COOK_TORRANCE`) | `COOK_TORRANCE` |
 | `tonemap` | Which color tone map tu use (`REINHARD`, `FILMIC`, `ACES`) | `FILMIC` |
-| `nb_threads` | Number of threads to use (`0` will use the maximum available threads) | `0` |
 
 Here is a profile example.
 
@@ -54,7 +53,6 @@ samples: 64 # Number of sample ray throw by pixel
 bounces: 4 # Maximum number of bounces per sample
 brdf: COOK_TORRANCE # Which brdf to use
 tonemap: FILMIC # Which color tone map to use
-nb_threads: 8 # Number of threads to use (0 will use the maximum available threads)
 ```
 
 ## Features

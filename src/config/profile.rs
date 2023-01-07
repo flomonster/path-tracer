@@ -22,8 +22,6 @@ pub struct Profile {
     pub brdf: BrdfType,
     #[serde(default)]
     pub tonemap: TonemapType,
-    #[serde(default)]
-    pub nb_threads: usize,
 }
 
 impl Profile {
