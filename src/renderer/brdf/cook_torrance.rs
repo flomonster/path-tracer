@@ -3,6 +3,8 @@ use crate::renderer::brdf::Brdf;
 use crate::renderer::utils::reflection;
 use crate::renderer::MaterialSample;
 use cgmath::*;
+use rand::Rng;
+use rand::rngs::StdRng;
 use std::f32::consts::PI;
 
 pub struct CookTorrance {
@@ -15,9 +17,9 @@ pub struct CookTorrance {
 }
 
 impl Brdf for CookTorrance {
-    fn sample(&mut self, geometric_normal: Vector3<f32>, v: Vector3<f32>) -> Vector3<f32> {
+    fn sample(&mut self, geometric_normal: Vector3<f32>, v: Vector3<f32>, rand_gen : &mut StdRng) -> Vector3<f32> {
         // Compute a new random microfacet normal
-        self.compute_microfacet_normal(geometric_normal);
+        self.compute_microfacet_normal(geometric_normal, rand_gen);
 
         // Compute direction by reflecting v about the microfacet normal
         let sample_dir = reflection(&v, &self.microfacet_normal);
@@ -111,12 +113,12 @@ impl CookTorrance {
         diffuse * cosine_term
     }
 
-    fn compute_microfacet_normal(&mut self, geometric_normal: Vector3<f32>) {
+    fn compute_microfacet_normal(&mut self, geometric_normal: Vector3<f32>, rand_gen : &mut StdRng) {
         let a = self.roughness * self.roughness;
         let a2 = a * a;
         // Generate uniform random variables between 0 and 1
-        let r1: f32 = rand::random();
-        let r2: f32 = rand::random();
+        let r1: f32 = rand_gen.gen();
+        let r2: f32 = rand_gen.gen();
 
         // Compute spherical coordinates of the normal
         // Theta depends on the roughness according to the NDF (due to importance sampling on microfacet model)

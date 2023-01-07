@@ -4,6 +4,8 @@ use super::Ray;
 use crate::scene::internal::Model;
 use crate::Scene;
 use cgmath::*;
+use rand::Rng;
+use rand::rngs::StdRng;
 use std::sync::Arc;
 
 /// Return all the hits of a ray in a scene sorted by distance
@@ -18,14 +20,14 @@ pub fn ray_cast(scene: &Scene, ray: &Ray) -> Vec<(Hit, Arc<Model>)> {
     res
 }
 
-pub fn russian_roulette(throughput: &mut Vector3<f32>) -> bool {
+pub fn russian_roulette(throughput: &mut Vector3<f32>, rand_gen: &mut StdRng) -> bool {
     // Randomly terminate a path with a probability inversely equal to the throughput
     let rr_proba = throughput.x.max(throughput.y).max(throughput.z);
 
     // Add the energy we 'lose' by randomly terminating paths
     *throughput *= 1. / rr_proba;
 
-    rand::random::<f32>() > rr_proba
+    rand_gen.gen::<f32>() > rr_proba
 }
 
 /// Compute reflection vector given incident and normal vectors

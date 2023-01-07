@@ -16,6 +16,9 @@ use derivative::Derivative;
 use image::{Rgb, RgbImage};
 use material_sample::MaterialSample;
 use pbr::ProgressBar;
+use rand::Rng;
+use rand::SeedableRng;
+use rand::rngs::StdRng;
 use rayon::prelude::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
 use std::f32::consts::PI;
 use std::sync::atomic::AtomicBool;
@@ -104,11 +107,13 @@ impl Renderer {
                 let x = i as u32 % width;
                 let y = i as u32 / width;
 
-                let mut screen_x = x as f32 + rand::random::<f32>();
+                let mut rand_gen = StdRng::seed_from_u64(current_sample as u64 + i as u64 * profile.samples as u64);
+
+                let mut screen_x = x as f32 + rand_gen.gen::<f32>();
                 screen_x = screen_x / width_f * 2. - 1.;
                 screen_x *= Rad::tan(scene.camera.fov / 2.) * image_ratio;
 
-                let mut screen_y = y as f32 + rand::random::<f32>();
+                let mut screen_y = y as f32 + rand_gen.gen::<f32>();
                 screen_y = 1. - screen_y / height_f * 2.;
                 screen_y *= Rad::tan(scene.camera.fov / 2.);
 
@@ -117,7 +122,7 @@ impl Renderer {
                 let ray = Ray::new(scene.camera.position(), ray_dir);
 
                 // Compute pixel color
-                let color = Self::render_pixel(&profile, scene, ray);
+                let color = Self::render_pixel(&profile, scene, ray, &mut rand_gen);
 
                 // Update my pixel
                 *pixel += color;
@@ -162,7 +167,7 @@ impl Renderer {
     }
 
     /// Render the color of a pixel given a ray and the scene
-    fn render_pixel(profile: &Profile, scene: &Scene, mut ray: Ray) -> Vector3<f32> {
+    fn render_pixel(profile: &Profile, scene: &Scene, mut ray: Ray, rand_gen : &mut StdRng) -> Vector3<f32> {
         let mut rad_info = RadianceInfo::default();
 
         for bounce in 0..(profile.bounces + 1) {
@@ -186,7 +191,7 @@ impl Renderer {
                 });
 
                 // Alpha transparency
-                if opacity >= 1. || rand::random::<f32>() < opacity {
+                if opacity >= 1. || rand_gen.gen::<f32>() < opacity {
                     // Consider the surface as opaque and stop iterating over the intersections
                     break;
                 }
@@ -201,13 +206,14 @@ impl Renderer {
                 &surface_info.unwrap(),
                 view_direction,
                 bounce < profile.bounces,
+                rand_gen,
             );
 
             if rad_info.throughput.magnitude2() < 0.00001 {
                 return rad_info.color;
             }
 
-            if bounce > 3 && russian_roulette(&mut rad_info.throughput) {
+            if bounce > 3 && russian_roulette(&mut rad_info.throughput, rand_gen) {
                 return rad_info.color;
             }
         }
@@ -221,6 +227,7 @@ impl Renderer {
         surface_info: &SurfaceInfo,
         view_direction: Vector3<f32>,
         compute_indirect: bool,
+        rand_gen : &mut StdRng,
     ) -> (RadianceInfo, Ray) {
         let mut brdf = get_brdf(&surface_info.material, profile.brdf);
         let mut color = rad_info.color;
@@ -252,7 +259,7 @@ impl Renderer {
             ray = Ray::new(
                 surface_info.hit.get_position()
                     + surface_info.hit.get_geometric_normal() * Self::NORMAL_BIAS,
-                brdf.sample(surface_info.normal, view_direction),
+                brdf.sample(surface_info.normal, view_direction, rand_gen),
             );
             let sample_radiance =
                 brdf.eval_indirect(surface_info.normal, view_direction, ray.direction);

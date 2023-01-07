@@ -21,11 +21,11 @@ pub fn debug_render(scene: &Scene, resolution: Resolution) {
 
     for x in 0..width {
         for y in 0..height {
-            let mut screen_x = x as f32 + rand::random::<f32>();
+            let mut screen_x = x as f32 + 0.5;
             screen_x = screen_x / width_f * 2. - 1.;
             screen_x *= Rad::tan(scene.camera.fov / 2.) * image_ratio;
 
-            let mut screen_y = y as f32 + rand::random::<f32>();
+            let mut screen_y = y as f32 + 0.5;
             screen_y = 1. - screen_y / height_f * 2.;
             screen_y *= Rad::tan(scene.camera.fov / 2.);
 
