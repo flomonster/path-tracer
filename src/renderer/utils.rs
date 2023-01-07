@@ -4,8 +4,8 @@ use super::Ray;
 use crate::scene::internal::Model;
 use crate::Scene;
 use cgmath::*;
-use rand::Rng;
 use rand::rngs::StdRng;
+use rand::Rng;
 use std::sync::Arc;
 
 /// Return all the hits of a ray in a scene sorted by distance

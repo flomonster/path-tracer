@@ -3,8 +3,8 @@ use crate::renderer::brdf::Brdf;
 use crate::renderer::utils::reflection;
 use crate::renderer::MaterialSample;
 use cgmath::*;
-use rand::Rng;
 use rand::rngs::StdRng;
+use rand::Rng;
 use std::f32::consts::PI;
 
 pub struct CookTorrance {
@@ -17,7 +17,12 @@ pub struct CookTorrance {
 }
 
 impl Brdf for CookTorrance {
-    fn sample(&mut self, geometric_normal: Vector3<f32>, v: Vector3<f32>, rand_gen : &mut StdRng) -> Vector3<f32> {
+    fn sample(
+        &mut self,
+        geometric_normal: Vector3<f32>,
+        v: Vector3<f32>,
+        rand_gen: &mut StdRng,
+    ) -> Vector3<f32> {
         // Compute a new random microfacet normal
         self.compute_microfacet_normal(geometric_normal, rand_gen);
 
@@ -113,7 +118,7 @@ impl CookTorrance {
         diffuse * cosine_term
     }
 
-    fn compute_microfacet_normal(&mut self, geometric_normal: Vector3<f32>, rand_gen : &mut StdRng) {
+    fn compute_microfacet_normal(&mut self, geometric_normal: Vector3<f32>, rand_gen: &mut StdRng) {
         let a = self.roughness * self.roughness;
         let a2 = a * a;
         // Generate uniform random variables between 0 and 1

@@ -16,9 +16,9 @@ use derivative::Derivative;
 use image::{Rgb, RgbImage};
 use material_sample::MaterialSample;
 use pbr::ProgressBar;
+use rand::rngs::StdRng;
 use rand::Rng;
 use rand::SeedableRng;
-use rand::rngs::StdRng;
 use rayon::prelude::{IndexedParallelIterator, IntoParallelRefMutIterator, ParallelIterator};
 use std::f32::consts::PI;
 use std::sync::atomic::AtomicBool;
@@ -107,7 +107,9 @@ impl Renderer {
                 let x = i as u32 % width;
                 let y = i as u32 / width;
 
-                let mut rand_gen = StdRng::seed_from_u64(current_sample as u64 + i as u64 * profile.samples as u64);
+                let mut rand_gen = StdRng::seed_from_u64(
+                    current_sample as u64 + i as u64 * profile.samples as u64,
+                );
 
                 let mut screen_x = x as f32 + rand_gen.gen::<f32>();
                 screen_x = screen_x / width_f * 2. - 1.;
@@ -167,7 +169,12 @@ impl Renderer {
     }
 
     /// Render the color of a pixel given a ray and the scene
-    fn render_pixel(profile: &Profile, scene: &Scene, mut ray: Ray, rand_gen : &mut StdRng) -> Vector3<f32> {
+    fn render_pixel(
+        profile: &Profile,
+        scene: &Scene,
+        mut ray: Ray,
+        rand_gen: &mut StdRng,
+    ) -> Vector3<f32> {
         let mut rad_info = RadianceInfo::default();
 
         for bounce in 0..(profile.bounces + 1) {
@@ -227,7 +234,7 @@ impl Renderer {
         surface_info: &SurfaceInfo,
         view_direction: Vector3<f32>,
         compute_indirect: bool,
-        rand_gen : &mut StdRng,
+        rand_gen: &mut StdRng,
     ) -> (RadianceInfo, Ray) {
         let mut brdf = get_brdf(&surface_info.material, profile.brdf);
         let mut color = rad_info.color;

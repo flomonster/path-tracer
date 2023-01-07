@@ -3,12 +3,16 @@ mod cook_torrance;
 use super::MaterialSample;
 use cgmath::*;
 pub use cook_torrance::CookTorrance;
-use derivative::Derivative;
 use rand::rngs::StdRng;
 use serde::Deserialize;
 
 pub trait Brdf {
-    fn sample(&mut self, geometric_normal: Vector3<f32>, v: Vector3<f32>, rand_gen : &mut StdRng) -> Vector3<f32>;
+    fn sample(
+        &mut self,
+        geometric_normal: Vector3<f32>,
+        v: Vector3<f32>,
+        rand_gen: &mut StdRng,
+    ) -> Vector3<f32>;
 
     fn eval_direct(
         &self,

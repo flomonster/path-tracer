@@ -21,6 +21,11 @@ tags
 # Profiles
 **/*.yml
 **/*.yaml
+!.github/**/*.yml
+!.github/**/*.yaml
 
 # Envs
 *.nix
+
+# Big Scenes
+tests/big_scenes

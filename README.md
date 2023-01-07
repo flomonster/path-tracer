@@ -3,7 +3,7 @@
 </h1>
 <p align="center">
    <a href="https://github.com/flomonster/path-tracer/actions">
-      <img src="https://github.com/flomonster/path-tracer/workflows/Build/badge.svg" alt="github">
+      <img src="https://github.com/flomonster/path-tracer/actions/workflows/path-tracer.yml/badge.svg" alt="github">
    </a>
 </p>
 <hr>
