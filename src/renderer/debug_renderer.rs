@@ -76,7 +76,7 @@ fn render_debug_pixels(scene: &Scene, ray: &Ray) -> HashMap<&'static str, Vector
 
     // Normal
     let normal = hit.get_normal(model.get_material());
-    result.insert("normal", normal);
+    result.insert("normal", (normal * 0.5).add_element_wise(0.5));
 
     // Albedo
     result.insert("albedo", material.albedo);
