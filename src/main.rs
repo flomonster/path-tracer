@@ -121,4 +121,12 @@ mod tests {
             "a7354168996aab12d0edb93bd2ba3f67a505f701",
         );
     }
+
+    #[test]
+    fn alpha_transparency() {
+        test_scene(
+            "tests/scenes/alpha_transparency/scene.isf",
+            "35d5b462a4f45fd445a7d6611287c4583e7beed9",
+        );
+    }
 }
