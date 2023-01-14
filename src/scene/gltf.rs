@@ -48,7 +48,7 @@ impl ReverseTextureBank {
         let len = self.rgb_textures.len();
         self.rgb_textures
             .entry(image)
-            .or_insert(format!("vec_tex_{}.png", len))
+            .or_insert(format!("vec_tex_{len}.png"))
             .clone()
     }
 
@@ -56,7 +56,7 @@ impl ReverseTextureBank {
         let len = self.gray_textures.len();
         self.gray_textures
             .entry(image)
-            .or_insert(format!("gray_tex_{}.png", len))
+            .or_insert(format!("gray_tex_{len}.png"))
             .clone()
     }
 
@@ -64,7 +64,7 @@ impl ReverseTextureBank {
         let len = self.alpha_textures.len();
         self.alpha_textures
             .entry(image)
-            .or_insert(format!("alpha_tex_{}.png", len))
+            .or_insert(format!("alpha_tex_{len}.png"))
             .clone()
     }
 
@@ -72,7 +72,7 @@ impl ReverseTextureBank {
         let len = self.albedo_textures.len();
         self.albedo_textures
             .entry(image)
-            .or_insert(format!("albedo_tex_{}.png", len))
+            .or_insert(format!("albedo_tex_{len}.png"))
             .clone()
     }
 }

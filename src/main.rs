@@ -15,7 +15,7 @@ fn main() {
     match run() {
         Ok(result) => result,
         Err(e) => {
-            eprintln!("{}", e);
+            eprintln!("{e}");
             exit(2);
         }
     }

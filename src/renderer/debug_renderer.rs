@@ -57,7 +57,7 @@ pub fn debug_render(scene: &Scene, resolution: Resolution) {
                 ]);
             }
         }
-        image.save(format!("{}.png", buffer_name)).unwrap();
+        image.save(format!("{buffer_name}.png")).unwrap();
     }
 }
 
