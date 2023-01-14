@@ -187,7 +187,7 @@ impl Renderer {
 
             let mut surface_info = None;
             for (hit, model) in intersections {
-                let material_sample = hit.get_material_sample(&model);
+                let material_sample = hit.get_material_sample(model);
                 let normal = hit.get_normal(model.get_material());
                 let opacity = material_sample.opacity;
 
@@ -290,7 +290,7 @@ impl Renderer {
                 // Atenuate the light by the opacity of occluders objects
                 let mut color = *color;
                 for (shadow_hit, shadow_model) in ray_cast(scene, &shadow_ray) {
-                    let material_sample = shadow_hit.get_material_sample(&shadow_model);
+                    let material_sample = shadow_hit.get_material_sample(shadow_model);
                     color *= 1. - material_sample.opacity;
                     if color.sum() == 0. {
                         break;
@@ -322,7 +322,7 @@ impl Renderer {
                         // The intersected object is behind the light
                         break;
                     }
-                    let material_sample = hit.get_material_sample(&shadow_model);
+                    let material_sample = hit.get_material_sample(shadow_model);
                     light_dissipated *= 1. - material_sample.opacity;
                     if light_dissipated.sum() == 0. {
                         break;

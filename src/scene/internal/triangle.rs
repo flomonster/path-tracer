@@ -3,7 +3,7 @@ use crate::{
     renderer::{Hit, Intersectable, Ray},
     scene::isf,
 };
-use cgmath::*;
+use cgmath::{InnerSpace, Vector2, Vector3};
 use kdtree_ray::*;
 use std::ops::{Index, IndexMut};
 
@@ -81,8 +81,8 @@ impl Intersectable<Option<Hit>> for Triangle {
     }
 }
 
-impl BoundingBox for Triangle {
-    fn bounding_box(&self) -> AABB {
+impl Bounded for Triangle {
+    fn bound(&self) -> AABB {
         let min = Vector3::new(
             self[0]
                 .position
@@ -117,7 +117,7 @@ impl BoundingBox for Triangle {
                 .max(self[1].position.z)
                 .max(self[2].position.z),
         );
-        [min, max]
+        AABB::new(min, max)
     }
 }
 

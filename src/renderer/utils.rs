@@ -6,14 +6,14 @@ use crate::Scene;
 use cgmath::*;
 use rand::rngs::StdRng;
 use rand::Rng;
-use std::sync::Arc;
 
 /// Return all the hits of a ray in a scene sorted by distance
-pub fn ray_cast(scene: &Scene, ray: &Ray) -> Vec<(Hit, Arc<Model>)> {
+pub fn ray_cast<'a>(scene: &'a Scene, ray: &Ray) -> Vec<(Hit, &'a Model)> {
     let mut res: Vec<_> = vec![];
-    for model in scene.models.intersect(&ray.origin, &ray.direction) {
+    for model_index in scene.kdtree.intersect(&ray.origin, &ray.direction) {
+        let model = &scene.models[model_index];
         for hit in model.intersect(ray) {
-            res.push((hit, model.clone()));
+            res.push((hit, model));
         }
     }
     res.sort_by(|(hit1, _), (hit2, _)| hit1.get_dist().partial_cmp(&hit2.get_dist()).unwrap());
