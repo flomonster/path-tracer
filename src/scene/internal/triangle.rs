@@ -76,6 +76,7 @@ impl Intersectable<Option<Hit>> for Triangle {
             dist,
             ray.origin + ray.direction * dist,
             &Vector2::new(u, v),
+            det < 0.0,
         ))
     }
 }

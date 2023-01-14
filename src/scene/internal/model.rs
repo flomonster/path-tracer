@@ -34,17 +34,32 @@ impl Intersectable<Vec<Hit>> for Model {
                 let t1 = (-b - discriminant.sqrt()) / (2.0 * a);
                 let t2 = (-b + discriminant.sqrt()) / (2.0 * a);
                 assert!(t1 <= t2);
-                // Doesn't authorize intersections from inside the sphere
-                if t1 < 0.0 {
+                if t2 < 0.0 {
+                    // Sphere is behind us
                     return vec![];
                 }
-                let hit_point = ray.origin + ray.direction * t1;
-                let normal = (hit_point - center).normalize();
-                vec![Hit::Sphere {
-                    dist: ray_to_center.magnitude(),
+
+                let hit_point = ray.origin + ray.direction * t2;
+                let normal = -(hit_point - center).normalize();
+                let hit_t2 = Hit::Sphere {
+                    dist: (hit_point - ray.origin).magnitude(),
                     position: hit_point,
                     normal,
-                }]
+                };
+                if t1 < 0.0 {
+                    // We are inside the sphere
+                    vec![hit_t2]
+                } else {
+                    // Both intersections are in front of us
+                    let hit_point= ray.origin + ray.direction * t1;
+                    let normal = (hit_point - center).normalize();
+                    let hit_t1 = Hit::Sphere {
+                        dist: (hit_point - ray.origin).magnitude(),
+                        position: hit_point,
+                        normal,
+                    };
+                    vec![hit_t1, hit_t2]
+                }
             }
             Model::Mesh { triangles, .. } => triangles
                 .intersect(&ray.origin, &ray.direction)

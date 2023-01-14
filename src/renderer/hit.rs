@@ -20,6 +20,9 @@ pub enum Hit {
 
         /// Texture coordinate
         tex_coords: Vector2<f32>,
+
+        /// Triangle is a backface
+        is_backface: bool,
     },
     Sphere {
         /// Distance from the ray origin to the intersection point
@@ -48,21 +51,30 @@ impl Hit {
         }
     }
 
+    // Returns the normal map if available. Otherwise, return geometric normal
     pub fn get_normal(&self, material: &Material) -> Vector3<f32> {
         match self {
             Hit::Triangle {
                 normal: hit_normal,
                 tangent: hit_tangent,
                 tex_coords,
+                is_backface,
                 ..
             } => {
-                if let Some(normal_map) = material.get_normal(tex_coords) {
+                let normal = if let Some(normal_map) = material.get_normal(tex_coords) {
                     // Compute the normal vector from the texture normal
                     let bitangent = hit_normal.cross(*hit_tangent);
                     let tbn = Matrix3::from_cols(*hit_tangent, bitangent, *hit_normal);
                     (tbn * normal_map).normalize()
                 } else {
                     *hit_normal
+                };
+
+                // Flip normal for backface hit
+                if *is_backface {
+                    -normal
+                } else {
+                    normal
                 }
             }
             Hit::Sphere { normal, .. } => *normal,
@@ -90,6 +102,7 @@ impl Hit {
         dist: f32,
         position: Vector3<f32>,
         uv: &Vector2<f32>,
+        is_backface: bool
     ) -> Self {
         // Interpolate normal from vertices
         let normal = (1. - uv.x - uv.y) * triangle[0].normal
@@ -119,6 +132,7 @@ impl Hit {
             normal,
             tex_coords,
             tangent,
+            is_backface,
         }
     }
 }
