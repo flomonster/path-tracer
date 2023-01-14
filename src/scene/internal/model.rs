@@ -4,12 +4,13 @@ use crate::renderer::{Hit, Intersectable, Ray};
 use crate::scene::isf;
 use cgmath::InnerSpace;
 use cgmath::Vector3;
-use kdtree_ray::{BoundingBox, KDtree, AABB};
+use kdtree_ray::{Bounded, KDTree, AABB};
 
 #[derive(Clone, Debug)]
 pub enum Model {
     Mesh {
-        triangles: KDtree<Triangle>,
+        triangles: Vec<Triangle>,
+        kdtree: KDTree,
         material: Material,
     },
     Sphere {
@@ -61,23 +62,25 @@ impl Intersectable<Vec<Hit>> for Model {
                     vec![hit_t1, hit_t2]
                 }
             }
-            Model::Mesh { triangles, .. } => triangles
+            Model::Mesh {
+                triangles, kdtree, ..
+            } => kdtree
                 .intersect(&ray.origin, &ray.direction)
-                .iter()
-                .filter_map(|t| t.intersect(ray))
+                .into_iter()
+                .filter_map(|index| triangles[index].intersect(ray))
                 .collect(),
         }
     }
 }
 
-impl BoundingBox for Model {
-    fn bounding_box(&self) -> AABB {
+impl Bounded for Model {
+    fn bound(&self) -> AABB {
         match self {
-            Model::Mesh { triangles, .. } => triangles.bounding_box(),
-            Model::Sphere { radius, center, .. } => [
+            Model::Mesh { kdtree, .. } => kdtree.bound(),
+            Model::Sphere { radius, center, .. } => AABB::new(
                 *center - Vector3::new(*radius, *radius, *radius),
                 *center + Vector3::new(*radius, *radius, *radius),
-            ],
+            ),
         }
     }
 }
@@ -88,10 +91,15 @@ impl Model {
             isf::Model::Mesh {
                 triangles,
                 material,
-            } => Model::Mesh {
-                triangles: KDtree::new(triangles.iter().map(|t| t.clone().into()).collect()),
-                material: Material::load(material, texture_bank),
-            },
+            } => {
+                let triangles = triangles.into_iter().map(|t| t.into()).collect();
+                let kdtree = KDTree::build(&triangles);
+                Model::Mesh {
+                    triangles,
+                    kdtree,
+                    material: Material::load(material, texture_bank),
+                }
+            }
             isf::Model::Sphere {
                 radius,
                 center,

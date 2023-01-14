@@ -9,7 +9,7 @@ mod vertex;
 use std::path::PathBuf;
 
 use cgmath::Vector3;
-use kdtree_ray::KDtree;
+use kdtree_ray::KDTree;
 
 pub use camera::Camera;
 pub use light::Light;
@@ -24,7 +24,8 @@ use super::isf;
 
 #[derive(Debug, Clone)]
 pub struct Scene {
-    pub models: KDtree<Model>,
+    pub models: Vec<Model>,
+    pub kdtree: KDTree,
     pub camera: Camera,
     pub lights: Vec<Light>,
     pub background: Vector3<f32>,
@@ -33,13 +34,16 @@ pub struct Scene {
 impl Scene {
     pub fn load(isf: isf::Scene, root_path: PathBuf) -> Self {
         let mut texture_bank = TextureBank::new(root_path);
+        let models = isf
+            .models
+            .into_iter()
+            .map(|m| Model::load(m, &mut texture_bank))
+            .collect();
+        let kdtree = KDTree::build(&models);
+
         Self {
-            models: KDtree::new(
-                isf.models
-                    .into_iter()
-                    .map(|m| Model::load(m, &mut texture_bank))
-                    .collect(),
-            ),
+            kdtree,
+            models,
             camera: isf.camera.into(),
             lights: isf.lights.into_iter().map(|l| l.into()).collect(),
             background: isf.background.into(),
