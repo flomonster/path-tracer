@@ -51,7 +51,7 @@ impl Intersectable<Vec<Hit>> for Model {
                     vec![hit_t2]
                 } else {
                     // Both intersections are in front of us
-                    let hit_point= ray.origin + ray.direction * t1;
+                    let hit_point = ray.origin + ray.direction * t1;
                     let normal = (hit_point - center).normalize();
                     let hit_t1 = Hit::Sphere {
                         dist: (hit_point - ray.origin).magnitude(),

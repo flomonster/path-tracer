@@ -102,7 +102,7 @@ impl Hit {
         dist: f32,
         position: Vector3<f32>,
         uv: &Vector2<f32>,
-        is_backface: bool
+        is_backface: bool,
     ) -> Self {
         // Interpolate normal from vertices
         let normal = (1. - uv.x - uv.y) * triangle[0].normal
