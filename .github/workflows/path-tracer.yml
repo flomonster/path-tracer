@@ -4,11 +4,13 @@ on: [push]
 
 jobs:
   test:
-    name: Lint, check format and test 
+    name: Lint, check format and test
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
         uses: actions/checkout@v3
+      - name: Update apt
+        run: sudo apt-get update
       - name: Install lib csfml
         run: sudo apt-get install -y libcsfml-dev
       - name: Install rust
@@ -27,7 +29,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: fmt
-          args: --check 
+          args: --check
       - name: Clippy check
         uses: actions-rs/clippy-check@v1
         with:
