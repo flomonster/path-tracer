@@ -25,7 +25,7 @@ pub struct Profile {
 }
 
 impl Profile {
-    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self, Box<dyn Error>> {
+    pub fn load<P: AsRef<Path>>(path: P) -> Result<Self, Box<dyn Error + Send + Sync>> {
         let serialized = &read_to_string(path)?;
         Ok(serde_yaml::from_str(serialized)?)
     }

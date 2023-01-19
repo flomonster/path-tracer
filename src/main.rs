@@ -21,7 +21,7 @@ fn main() {
     }
 }
 
-fn run() -> Result<(), Box<dyn Error>> {
+fn run() -> Result<(), Box<dyn Error + Send + Sync>> {
     let config = Config::parse();
     match config {
         Config::Render(render_config) => run_render(render_config),
@@ -29,7 +29,7 @@ fn run() -> Result<(), Box<dyn Error>> {
     }
 }
 
-fn run_render(config: RenderConfig) -> Result<(), Box<dyn Error>> {
+fn run_render(config: RenderConfig) -> Result<(), Box<dyn Error + Send + Sync>> {
     let profile = match &config.profile {
         Some(path) => Profile::load(path)?,
         None => Default::default(),
@@ -51,7 +51,7 @@ fn run_render(config: RenderConfig) -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-fn run_convert(config: ConvertConfig) -> Result<(), Box<dyn Error>> {
+fn run_convert(config: ConvertConfig) -> Result<(), Box<dyn Error + Send + Sync>> {
     convert_gltf_to_isf(config.input, config.output)?;
     Ok(())
 }
@@ -94,7 +94,7 @@ mod tests {
     fn cube() {
         test_scene(
             "tests/scenes/cube/scene.isf",
-            "56fddd23f8163fc3e962132796661b7e65649889",
+            "60558456ace7e8063ebfab219ee35a2c7de862f5",
         );
     }
 
@@ -102,7 +102,7 @@ mod tests {
     fn reflection() {
         test_scene(
             "tests/scenes/reflection/scene.isf",
-            "87075c6dcc591d71a40f1c19b90b1cea60574662",
+            "6ccc3b9f20442f15f25c41cf8d342ede5185e3db",
         );
     }
 
@@ -110,7 +110,7 @@ mod tests {
     fn head() {
         test_scene(
             "tests/scenes/head/scene.isf",
-            "0f413dbd387f9bace28de6a3dcd29fbfc4ad2b0d",
+            "2c90976144ba14fe9f06ec3c812ff30f0a0c9146",
         );
     }
 
@@ -118,7 +118,7 @@ mod tests {
     fn spheres() {
         test_scene(
             "tests/scenes/spheres/scene.isf",
-            "a7354168996aab12d0edb93bd2ba3f67a505f701",
+            "fe2687e274ac978a4815f202612eca71ee8dd8c9",
         );
     }
 
@@ -126,7 +126,7 @@ mod tests {
     fn alpha_transparency() {
         test_scene(
             "tests/scenes/alpha_transparency/scene.isf",
-            "35d5b462a4f45fd445a7d6611287c4583e7beed9",
+            "fdf9ccbe9dc3f3102e3c05b96d2984000e73b62f",
         );
     }
 }

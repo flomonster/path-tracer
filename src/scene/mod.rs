@@ -13,7 +13,7 @@ use std::{
 
 use internal::Scene;
 
-pub fn load_internal<P: AsRef<Path>>(path: P) -> Result<Scene, Box<dyn Error>> {
+pub fn load_internal<P: AsRef<Path>>(path: P) -> Result<Scene, Box<dyn Error + Send + Sync>> {
     let file = File::open(&path)?;
     let reader = BufReader::new(file);
     let isf_scene = serde_json::from_reader(reader)?;

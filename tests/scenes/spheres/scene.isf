@@ -9,21 +9,20 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.0,
-                "roughness": 0.0,
-                "ior": 1.0,
-                "normal_texture": null
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "roughness": {
+                    "factor": 0.0
+                },
+                "ior": 1.0
             }
         },
         {
@@ -35,19 +34,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.25,
-                "roughness": 0.0,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.25
+                },
+                "roughness": {
+                    "factor": 0.0
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -61,21 +70,30 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.5,
-                "roughness": 0.0,
-                "ior": 1.0,
-                "normal_texture": null
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.5
+                },
+                "roughness": {
+                    "factor": 0.0
+                },
+                "ior": 1.0
             }
         },
         {
@@ -87,21 +105,30 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.75,
-                "roughness": 0.0,
-                "ior": 1.0,
-                "normal_texture": null
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.75
+                },
+                "roughness": {
+                    "factor": 0.0
+                },
+                "ior": 1.0
             }
         },
         {
@@ -113,19 +140,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 1.0,
-                "roughness": 0.0,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 1.0
+                },
+                "roughness": {
+                    "factor": 0.0
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -139,19 +176,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.0,
-                "roughness": 0.25,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.0
+                },
+                "roughness": {
+                    "factor": 0.25
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -165,19 +212,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.25,
-                "roughness": 0.25,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.25
+                },
+                "roughness": {
+                    "factor": 0.25
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -191,19 +248,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.5,
-                "roughness": 0.25,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.5
+                },
+                "roughness": {
+                    "factor": 0.25
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -217,19 +284,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.75,
-                "roughness": 0.25,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.75
+                },
+                "roughness": {
+                    "factor": 0.25
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -243,19 +320,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 1.0,
-                "roughness": 0.25,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 1.0
+                },
+                "roughness": {
+                    "factor": 0.25
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -269,19 +356,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.0,
-                "roughness": 0.5,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.0
+                },
+                "roughness": {
+                    "factor": 0.5
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -295,19 +392,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.25,
-                "roughness": 0.5,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.25
+                },
+                "roughness": {
+                    "factor": 0.5
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -321,19 +428,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.5,
-                "roughness": 0.5,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.5
+                },
+                "roughness": {
+                    "factor": 0.5
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -347,19 +464,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.75,
-                "roughness": 0.5,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.75
+                },
+                "roughness": {
+                    "factor": 0.5
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -373,19 +500,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 1.0,
-                "roughness": 0.5,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 1.0
+                },
+                "roughness": {
+                    "factor": 0.5
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -399,19 +536,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.0,
-                "roughness": 0.75,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.0
+                },
+                "roughness": {
+                    "factor": 0.75
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -425,19 +572,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.25,
-                "roughness": 0.75,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.25
+                },
+                "roughness": {
+                    "factor": 0.75
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -451,19 +608,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.5,
-                "roughness": 0.75,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.5
+                },
+                "roughness": {
+                    "factor": 0.75
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -477,19 +644,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.75,
-                "roughness": 0.75,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.75
+                },
+                "roughness": {
+                    "factor": 0.75
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -503,19 +680,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 1.0,
-                "roughness": 0.75,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 1.0
+                },
+                "roughness": {
+                    "factor": 0.75
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -529,19 +716,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.0,
-                "roughness": 1.0,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.0
+                },
+                "roughness": {
+                    "factor": 1.0
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -555,19 +752,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.25,
-                "roughness": 1.0,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.25
+                },
+                "roughness": {
+                    "factor": 1.0
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -581,19 +788,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.5,
-                "roughness": 1.0,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.5
+                },
+                "roughness": {
+                    "factor": 1.0
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -607,19 +824,29 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 0.75,
-                "roughness": 1.0,
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.75
+                },
+                "roughness": {
+                    "factor": 1.0
+                },
                 "ior": 1.0,
                 "normal_texture": null
             }
@@ -633,21 +860,23 @@
             ],
             "radius": 1.0,
             "material": {
-                "albedo": [
-                    1.0,
-                    0.0,
-                    0.0
-                ],
-                "emissive": [
-                    0.0,
-                    0.0,
-                    0.0
-                ],
-                "opacity": 1.0,
-                "metalness": 1.0,
-                "roughness": 1.0,
-                "ior": 1.0,
-                "normal_texture": null
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 1.0
+                },
+                "roughness": {
+                    "factor": 1.0
+                },
+                "ior": 1.0
             }
         }
     ],

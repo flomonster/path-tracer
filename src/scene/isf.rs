@@ -1,3 +1,5 @@
+use cgmath::One;
+use derivative::Derivative;
 use serde::{Deserialize, Serialize};
 
 #[derive(Deserialize, Serialize, Clone, Debug, Default)]
@@ -78,50 +80,63 @@ pub struct Material {
     /// Albedo
     pub albedo: Albedo,
     /// Emissive
+    #[serde(default)]
     pub emissive: Emissive,
     /// Opacity
+    #[serde(default)]
     pub opacity: Opacity,
     /// Metalness
+    #[serde(default)]
     pub metalness: Metalness,
     /// Roughness
+    #[serde(default)]
     pub roughness: Roughness,
     /// Index of refraction
+    #[serde(default = "One::one")]
     pub ior: f32,
     /// Normal texture
     pub normal_texture: Option<String>,
 }
 
 #[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum Albedo {
-    Value([f32; 3]),
-    Texture(String),
+pub struct Albedo {
+    #[serde(default = "one")]
+    pub factor: [f32; 3],
+    pub texture: Option<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum Emissive {
-    Value([f32; 3]),
-    Texture(String),
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct Emissive {
+    #[serde(default = "one")]
+    pub factor: [f32; 3],
+    pub texture: Option<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum Opacity {
-    Value(f32),
-    Texture(String),
+#[derive(Clone, Debug, Serialize, Deserialize, Derivative)]
+#[derivative(Default)]
+pub struct Opacity {
+    #[serde(default = "One::one")]
+    #[derivative(Default(value = "1.0"))]
+    pub factor: f32,
+    pub texture: Option<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum Metalness {
-    Value(f32),
-    Texture(String),
+#[derive(Clone, Debug, Serialize, Deserialize, Default)]
+pub struct Metalness {
+    #[serde(default = "One::one")]
+    pub factor: f32,
+    pub texture: Option<String>,
 }
 
-#[derive(Clone, Debug, Serialize, Deserialize)]
-#[serde(untagged)]
-pub enum Roughness {
-    Value(f32),
-    Texture(String),
+#[derive(Clone, Debug, Serialize, Deserialize, Derivative)]
+#[derivative(Default)]
+pub struct Roughness {
+    #[serde(default = "One::one")]
+    #[derivative(Default(value = "1.0"))]
+    pub factor: f32,
+    pub texture: Option<String>,
+}
+
+fn one() -> [f32; 3] {
+    [1.0, 1.0, 1.0]
 }

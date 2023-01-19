@@ -105,17 +105,26 @@
         ]
       ],
       "material": {
-        "albedo": "albedo_tex_0.png",
-        "emissive": [
-          0,
-          0,
-          0
-        ],
-        "opacity": 1,
-        "metalness": 0,
-        "roughness": 0.5,
-        "ior": 1,
-        "normal_texture": null
+        "albedo": {
+          "texture": "albedo_tex_0.png"
+        },
+        "emissive": {
+          "factor": [
+            0,
+            0,
+            0
+          ]
+        },
+        "opacity": {
+          "factor": 1
+        },
+        "metalness": {
+          "factor": 0
+        },
+        "roughness": {
+          "factor": 0.5
+        },
+        "ior": 1
       }
     },
     {
@@ -223,21 +232,20 @@
         ]
       ],
       "material": {
-        "albedo": [
-          0.8000001,
-          0.19889832,
-          0.20628689
-        ],
-        "emissive": [
-          0,
-          0,
-          0
-        ],
-        "opacity": 0.3,
-        "metalness": 0,
-        "roughness": 0.5,
-        "ior": 1,
-        "normal_texture": null
+        "albedo": {
+          "factor": [
+            0.8000001,
+            0.19889832,
+            0.20628689
+          ]
+        },
+        "opacity": {
+          "factor": 0.3
+        },
+        "roughness": {
+          "factor": 0.5
+        },
+        "ior": 1
       }
     },
     {
@@ -345,21 +353,20 @@
         ]
       ],
       "material": {
-        "albedo": [
-          0.8000001,
-          0.19889832,
-          0.20628689
-        ],
-        "emissive": [
-          0,
-          0,
-          0
-        ],
-        "opacity": 0.3,
-        "metalness": 0,
-        "roughness": 0.5,
-        "ior": 1,
-        "normal_texture": null
+        "albedo": {
+          "factor": [
+            0.8000001,
+            0.19889832,
+            0.20628689
+          ]
+        },
+        "opacity": {
+          "factor": 0.3
+        },
+        "roughness": {
+          "factor": 0.5
+        },
+        "ior": 1
       }
     },
     {
@@ -467,21 +474,27 @@
         ]
       ],
       "material": {
-        "albedo": [
-          0.8000001,
-          0.28714153,
-          0.6658842
-        ],
-        "emissive": [
-          0,
-          0,
-          0
-        ],
-        "opacity": 0.3,
-        "metalness": 0,
-        "roughness": 0.5,
-        "ior": 1,
-        "normal_texture": null
+        "albedo": {
+          "factor": [
+            0.8000001,
+            0.28714153,
+            0.6658842
+          ]
+        },
+        "emissive": {
+          "factor": [
+            0,
+            0,
+            0
+          ]
+        },
+        "opacity": {
+          "factor": 0.3
+        },
+        "roughness": {
+          "factor": 0.5
+        },
+        "ior": 1
       }
     },
     {
@@ -1089,21 +1102,27 @@
         ]
       ],
       "material": {
-        "albedo": [
-          0.8000001,
-          0.19889832,
-          0.20628689
-        ],
-        "emissive": [
-          0,
-          0,
-          0
-        ],
-        "opacity": 0.3,
-        "metalness": 0,
-        "roughness": 0.5,
-        "ior": 1,
-        "normal_texture": null
+        "albedo": {
+          "factor": [
+            0.8000001,
+            0.19889832,
+            0.20628689
+          ]
+        },
+        "emissive": {
+          "factor": [
+            0,
+            0,
+            0
+          ]
+        },
+        "opacity": {
+          "factor": 0.3
+        },
+        "roughness": {
+          "factor": 0.5
+        },
+        "ior": 1
       }
     },
     {
@@ -1711,21 +1730,20 @@
         ]
       ],
       "material": {
-        "albedo": [
-          0.8000001,
-          0.19889832,
-          0.20628689
-        ],
-        "emissive": [
-          0,
-          0,
-          0
-        ],
-        "opacity": 0.3,
-        "metalness": 0,
-        "roughness": 0.5,
-        "ior": 1,
-        "normal_texture": null
+        "albedo": {
+          "factor": [
+            0.8000001,
+            0.19889832,
+            0.20628689
+          ]
+        },
+        "opacity": {
+          "factor": 0.3
+        },
+        "roughness": {
+          "factor": 0.5
+        },
+        "ior": 1
       }
     },
     {
@@ -2333,21 +2351,20 @@
         ]
       ],
       "material": {
-        "albedo": [
-          0.8000001,
-          0.28714153,
-          0.6658842
-        ],
-        "emissive": [
-          0,
-          0,
-          0
-        ],
-        "opacity": 0.3,
-        "metalness": 0,
-        "roughness": 0.5,
-        "ior": 1,
-        "normal_texture": null
+        "albedo": {
+          "factor": [
+            0.8000001,
+            0.28714153,
+            0.6658842
+          ]
+        },
+        "opacity": {
+          "factor": 0.3
+        },
+        "roughness": {
+          "factor": 0.5
+        },
+        "ior": 1
       }
     },
     {
@@ -2955,21 +2972,20 @@
         ]
       ],
       "material": {
-        "albedo": [
-          0.12017481,
-          0.14144157,
-          0.8000001
-        ],
-        "emissive": [
-          0,
-          0,
-          0
-        ],
-        "opacity": 0.5,
-        "metalness": 0,
-        "roughness": 0.5,
-        "ior": 1,
-        "normal_texture": null
+        "albedo": {
+          "factor": [
+            0.12017481,
+            0.14144157,
+            0.8000001
+          ]
+        },
+        "opacity": {
+          "factor": 0.5
+        },
+        "roughness": {
+          "factor": 0.5
+        },
+        "ior": 1
       }
     }
   ],

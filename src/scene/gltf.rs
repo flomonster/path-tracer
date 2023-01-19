@@ -81,29 +81,45 @@ fn convert_material(
     reverse_texture: &mut ReverseTextureBank,
 ) -> Material {
     Material {
-        albedo: match material.pbr.base_color_texture.clone() {
-            Some(texture) => Albedo::Texture(reverse_texture.get_albedo_path(texture)),
-            None => Albedo::Value(material.pbr.base_color_factor.truncate().into()),
+        albedo: Albedo {
+            factor: material.pbr.base_color_factor.truncate().into(),
+            texture: material
+                .pbr
+                .base_color_texture
+                .clone()
+                .map(|tex| reverse_texture.get_albedo_path(tex)),
         },
-        emissive: {
-            match material.emissive.texture.clone() {
-                Some(texture) => Emissive::Texture(reverse_texture.get_rgb_path(texture)),
-                None => Emissive::Value(material.emissive.factor.into()),
-            }
+        emissive: Emissive {
+            factor: material.emissive.factor.into(),
+            texture: material
+                .emissive
+                .texture
+                .clone()
+                .map(|tex| reverse_texture.get_rgb_path(tex)),
         },
-        opacity: {
-            match material.pbr.base_color_texture.clone() {
-                Some(texture) => Opacity::Texture(reverse_texture.get_alpha_path(texture)),
-                None => Opacity::Value(material.pbr.base_color_factor[3]),
-            }
+        opacity: Opacity {
+            factor: material.pbr.base_color_factor[3],
+            texture: material
+                .pbr
+                .base_color_texture
+                .clone()
+                .map(|tex| reverse_texture.get_alpha_path(tex)),
         },
-        metalness: match material.pbr.metallic_texture.clone() {
-            Some(texture) => Metalness::Texture(reverse_texture.get_gray_path(texture)),
-            None => Metalness::Value(material.pbr.metallic_factor),
+        metalness: Metalness {
+            factor: material.pbr.metallic_factor,
+            texture: material
+                .pbr
+                .metallic_texture
+                .clone()
+                .map(|tex| reverse_texture.get_gray_path(tex)),
         },
-        roughness: match material.pbr.roughness_texture.clone() {
-            Some(texture) => Roughness::Texture(reverse_texture.get_gray_path(texture)),
-            None => Roughness::Value(material.pbr.roughness_factor),
+        roughness: Roughness {
+            factor: material.pbr.roughness_factor,
+            texture: material
+                .pbr
+                .roughness_texture
+                .clone()
+                .map(|tex| reverse_texture.get_gray_path(tex)),
         },
         ior: 1.0,
         normal_texture: material
@@ -127,7 +143,10 @@ fn convert_model(model: easy_gltf::Model, reverse_texture: &mut ReverseTextureBa
     }
 }
 
-pub fn convert_gltf_to_isf<P: AsRef<Path>>(input: P, output: P) -> Result<(), Box<dyn Error>> {
+pub fn convert_gltf_to_isf<P: AsRef<Path>>(
+    input: P,
+    output: P,
+) -> Result<(), Box<dyn Error + Send + Sync>> {
     let output = PathBuf::from(output.as_ref());
     if !output.exists() {
         std::fs::create_dir_all(&output)?;
@@ -180,9 +199,15 @@ pub fn convert_gltf_to_isf<P: AsRef<Path>>(input: P, output: P) -> Result<(), Bo
 
 impl From<easy_gltf::Camera> for Camera {
     fn from(cam: easy_gltf::Camera) -> Self {
+        let fov = match cam.projection {
+            easy_gltf::Projection::Perspective { yfov, .. } => yfov.0,
+            easy_gltf::Projection::Orthographic { .. } => {
+                panic!("Orthographic camera not supported")
+            }
+        };
         Self {
             transform: cam.transform.into(),
-            fov: cam.fov.0,
+            fov,
             zfar: cam.zfar,
             znear: cam.znear,
         }
