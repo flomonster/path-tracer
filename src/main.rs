@@ -67,7 +67,7 @@ mod tests {
     use std::path::Path;
     use std::str;
 
-    fn test_scene<P>(path: P, expected_hash: &str)
+    fn test_scene_with_profile<P>(path: P, expected_hash: &str, profile: Profile)
     where
         P: AsRef<Path>,
     {
@@ -76,6 +76,15 @@ mod tests {
             ..Default::default()
         };
         let scene = load_internal(&config.input).unwrap();
+        let image = Renderer::new(&config, profile).render(&scene);
+        let hash = Sha1::new().chain(image.as_bytes()).finalize();
+        assert_eq!(format!("{:02x}", &hash), expected_hash);
+    }
+
+    fn test_scene<P>(path: P, expected_hash: &str)
+    where
+        P: AsRef<Path>,
+    {
         let profile = Profile {
             resolution: Resolution {
                 width: 800,
@@ -85,9 +94,7 @@ mod tests {
             samples: 16,
             ..Default::default()
         };
-        let image = Renderer::new(&config, profile).render(&scene);
-        let hash = Sha1::new().chain(image.as_bytes()).finalize();
-        assert_eq!(format!("{:02x}", &hash), expected_hash);
+        test_scene_with_profile(path, expected_hash, profile);
     }
 
     #[test]
@@ -140,9 +147,20 @@ mod tests {
 
     #[test]
     fn white_furnace_direct() {
-        test_scene(
+        let profile = Profile {
+            resolution: Resolution {
+                width: 800,
+                height: 600,
+            },
+            bounces: 0, // Direct lighting only
+            samples: 16,
+            ..Default::default()
+        };
+
+        test_scene_with_profile(
             "tests/scenes/white_furnace_direct/scene.isf",
-            "5e739726ba04920a01a3b4163d370f38e59b6f1a",
+            "9a8f46e4ca407ff1791e832476128f7fdad8881b",
+            profile,
         );
     }
 }
