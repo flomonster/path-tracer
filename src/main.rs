@@ -131,10 +131,18 @@ mod tests {
     }
 
     #[test]
-    fn white_furnace() {
+    fn white_furnace_indirect() {
         test_scene(
-            "tests/scenes/white_furnace/scene.isf",
+            "tests/scenes/white_furnace_indirect/scene.isf",
             "ebc76ee2c1b0a4772eaa0bc47fa01550c987d5fb",
+        );
+    }
+
+    #[test]
+    fn white_furnace_direct() {
+        test_scene(
+            "tests/scenes/white_furnace_direct/scene.isf",
+            "5e739726ba04920a01a3b4163d370f38e59b6f1a",
         );
     }
 }
