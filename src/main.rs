@@ -129,4 +129,12 @@ mod tests {
             "fdf9ccbe9dc3f3102e3c05b96d2984000e73b62f",
         );
     }
+
+    #[test]
+    fn white_furnace() {
+        test_scene(
+            "tests/scenes/white_furnace/scene.isf",
+            "ebc76ee2c1b0a4772eaa0bc47fa01550c987d5fb",
+        );
+    }
 }

@@ -1,0 +1,920 @@
+{
+    "models": [
+        {
+            "type": "Sphere",
+            "center": [
+                -6.0,
+                -6.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "roughness": {
+                    "factor": 0.0
+                },
+                "ior": 1.0
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                -6.0,
+                -3.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.25
+                },
+                "roughness": {
+                    "factor": 0.0
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                -6.0,
+                0.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.5
+                },
+                "roughness": {
+                    "factor": 0.0
+                },
+                "ior": 1.0
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                -6.0,
+                3.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.75
+                },
+                "roughness": {
+                    "factor": 0.0
+                },
+                "ior": 1.0
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                -6.0,
+                6.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 1.0
+                },
+                "roughness": {
+                    "factor": 0.0
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                -3.0,
+                -6.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.0
+                },
+                "roughness": {
+                    "factor": 0.25
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                -3.0,
+                -3.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.25
+                },
+                "roughness": {
+                    "factor": 0.25
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                -3.0,
+                0.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.5
+                },
+                "roughness": {
+                    "factor": 0.25
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                -3.0,
+                3.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.75
+                },
+                "roughness": {
+                    "factor": 0.25
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                -3.0,
+                6.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 1.0
+                },
+                "roughness": {
+                    "factor": 0.25
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                0.0,
+                -6.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.0
+                },
+                "roughness": {
+                    "factor": 0.5
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                0.0,
+                -3.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.25
+                },
+                "roughness": {
+                    "factor": 0.5
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                0.0,
+                0.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.5
+                },
+                "roughness": {
+                    "factor": 0.5
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                0.0,
+                3.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.75
+                },
+                "roughness": {
+                    "factor": 0.5
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                0.0,
+                6.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 1.0
+                },
+                "roughness": {
+                    "factor": 0.5
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                3.0,
+                -6.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.0
+                },
+                "roughness": {
+                    "factor": 0.75
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                3.0,
+                -3.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.25
+                },
+                "roughness": {
+                    "factor": 0.75
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                3.0,
+                0.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.5
+                },
+                "roughness": {
+                    "factor": 0.75
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                3.0,
+                3.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.75
+                },
+                "roughness": {
+                    "factor": 0.75
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                3.0,
+                6.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 1.0
+                },
+                "roughness": {
+                    "factor": 0.75
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                6.0,
+                -6.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.0
+                },
+                "roughness": {
+                    "factor": 1.0
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                6.0,
+                -3.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.25
+                },
+                "roughness": {
+                    "factor": 1.0
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                6.0,
+                0.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.5
+                },
+                "roughness": {
+                    "factor": 1.0
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                6.0,
+                3.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "emissive": {
+                    "factor": [
+                        0.0,
+                        0.0,
+                        0.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 0.75
+                },
+                "roughness": {
+                    "factor": 1.0
+                },
+                "ior": 1.0,
+                "normal_texture": null
+            }
+        },
+        {
+            "type": "Sphere",
+            "center": [
+                6.0,
+                6.0,
+                0
+            ],
+            "radius": 1.0,
+            "material": {
+                "albedo": {
+                    "factor": [
+                        1.0,
+                        1.0,
+                        1.0
+                    ]
+                },
+                "opacity": {
+                    "factor": 1.0
+                },
+                "metalness": {
+                    "factor": 1.0
+                },
+                "roughness": {
+                    "factor": 1.0
+                },
+                "ior": 1.0
+            }
+        }
+    ],
+    "camera": {
+        "transform": [
+            [
+                1.0,
+                0.0,
+                0.0,
+                0.0
+            ],
+            [
+                0.0,
+                1.0,
+                1.7881393e-07,
+                0.0
+            ],
+            [
+                0.0,
+                -1.7881393e-07,
+                1.0,
+                0.0
+            ],
+            [
+                0.0,
+                0.0,
+                25.0,
+                1.0
+            ]
+        ],
+        "fov": 0.6911112,
+        "zfar": 100.0,
+        "znear": 0.1
+    },
+    "lights": [],
+    "background": [
+        1.0,
+        1.0,
+        1.0
+    ]
+}
