@@ -198,7 +198,7 @@ impl Renderer {
                 });
 
                 // Alpha transparency
-                if opacity >= 1. || rand_gen.gen::<f32>() < opacity {
+                if opacity >= 1. || (opacity > 0.001 && rand_gen.gen::<f32>() < opacity) {
                     // Consider the surface as opaque and stop iterating over the intersections
                     break;
                 }
@@ -286,7 +286,6 @@ impl Renderer {
                 let shadow_ray_dir = -1. * direction;
                 let shadow_ray = Ray::new(shadow_ray_ori, shadow_ray_dir);
 
-                // TODO: no shadow for inner transparent objects
                 // Atenuate the light by the opacity of occluders objects
                 let mut color = *color;
                 for (shadow_hit, shadow_model) in ray_cast(scene, &shadow_ray) {
