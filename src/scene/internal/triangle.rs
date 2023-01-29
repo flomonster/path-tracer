@@ -129,91 +129,65 @@ impl From<isf::Triangle> for Triangle {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use std::env;
-    use std::fs;
-    use std::path::PathBuf;
-    use yaml_rust::yaml;
-    use yaml_rust::YamlLoader;
+    use serde::Deserialize;
+    use serde::Serialize;
 
-    #[derive(Debug)]
-    struct TriangleHit {
+    use super::*;
+
+    #[derive(Deserialize, Serialize, Debug)]
+    struct HitTest {
         dist: f32,
         u: f32,
         v: f32,
     }
 
-    #[derive(Debug)]
-    struct Test {
-        pub ray: Ray,
-        pub triangle: Triangle,
-        pub hit: Option<TriangleHit>,
+    #[derive(Deserialize, Serialize, Debug)]
+    struct RayTest {
+        direction: [f32; 3],
+        position: [f32; 3],
     }
-
-    fn array_to_vector3(array: &yaml::Array) -> Vector3<f32> {
-        Vector3::new(
-            array[0].as_f64().unwrap() as f32,
-            array[1].as_f64().unwrap() as f32,
-            array[2].as_f64().unwrap() as f32,
-        )
-    }
-
-    fn convert_yaml(yaml: &yaml::Yaml) -> Test {
-        let yaml = yaml.as_hash().unwrap();
-        let mut ray = Ray::default();
-        let mut triangle = Triangle::default();
-        triangle[1].tex_coords = Vector2::new(1., 0.);
-        triangle[2].tex_coords = Vector2::new(0., 1.);
-        let mut hit = None;
-
-        for (key, value) in yaml {
-            let key = key.as_str().unwrap();
-            let value = value.as_hash().unwrap();
-            match key {
-                "hit" => {
-                    let mut u = 0.;
-                    let mut v = 0.;
-                    let mut dist = 0.;
-                    for (key, value) in value {
-                        let key = key.as_str().unwrap();
-                        match key {
-                            "u" => u = value.as_f64().unwrap() as f32,
-                            "v" => v = value.as_f64().unwrap() as f32,
-                            _ => dist = value.as_f64().unwrap() as f32,
-                        }
-                    }
-                    hit = Some(TriangleHit { dist, u, v });
-                }
-                "ray" => {
-                    for (key, value) in value {
-                        let key = key.as_str().unwrap();
-                        match key {
-                            "direction" => {
-                                ray.direction = array_to_vector3(value.as_vec().unwrap())
-                            }
-                            _ => ray.origin = array_to_vector3(value.as_vec().unwrap()),
-                        }
-                    }
-                }
-                "triangle" => {
-                    for (key, value) in value {
-                        let key = key.as_str().unwrap();
-                        match key {
-                            "v0" => {
-                                triangle[0].position = array_to_vector3(value.as_vec().unwrap())
-                            }
-                            "v1" => {
-                                triangle[1].position = array_to_vector3(value.as_vec().unwrap())
-                            }
-                            _ => triangle[2].position = array_to_vector3(value.as_vec().unwrap()),
-                        }
-                    }
-                }
-                _ => panic!("Malformated yaml test"),
-            };
+    impl From<RayTest> for Ray {
+        fn from(r: RayTest) -> Self {
+            Self {
+                direction: r.direction.into(),
+                origin: r.position.into(),
+            }
         }
+    }
 
-        Test { ray, triangle, hit }
+    #[derive(Deserialize, Serialize, Debug)]
+    struct TriangleTest {
+        v0: [f32; 3],
+        v1: [f32; 3],
+        v2: [f32; 3],
+    }
+
+    impl From<TriangleTest> for Triangle {
+        fn from(t: TriangleTest) -> Self {
+            Self(
+                Vertex {
+                    position: t.v0.into(),
+                    ..Default::default()
+                },
+                Vertex {
+                    position: t.v1.into(),
+                    tex_coords: Vector2::new(1.0, 0.0),
+                    ..Default::default()
+                },
+                Vertex {
+                    position: t.v2.into(),
+                    tex_coords: Vector2::new(0.0, 1.0),
+                    ..Default::default()
+                },
+            )
+        }
+    }
+
+    #[derive(Deserialize, Serialize, Debug)]
+    struct Test {
+        pub ray: RayTest,
+        pub triangle: TriangleTest,
+        pub hit: Option<HitTest>,
     }
 
     fn unwrap_hit_tex_coords(hit: &Hit) -> Vector2<f32> {
@@ -225,18 +199,14 @@ mod tests {
 
     #[test]
     fn hit() {
-        let home = env::var("CARGO_MANIFEST_DIR").unwrap();
-        let mut home = PathBuf::from(home);
-        home.push("tests/moller_trumbore/hit_tests.yml");
-        let tests = &YamlLoader::load_from_str(
-            &fs::read_to_string(&home).expect("Something went wrong reading hit_tests.yml"),
-        )
-        .expect("Something went wrong parsing hit_tests.yml");
-        let tests = &tests[0].as_vec().unwrap();
+        let tests: Vec<Test> =
+            serde_yaml::from_str(include_str!("../../../tests/moller_trumbore/hit_tests.yml"))
+                .unwrap();
 
-        for test in tests.iter() {
-            let test = convert_yaml(test);
-            let hit = test.triangle.intersect(&test.ray);
+        for test in tests.into_iter() {
+            let triangle: Triangle = test.triangle.into();
+            let ray = test.ray.into();
+            let hit = triangle.intersect(&ray);
             assert!(hit.is_some());
             let hit = hit.unwrap();
             let test_hit = test.hit.unwrap();
@@ -249,18 +219,16 @@ mod tests {
 
     #[test]
     fn miss() {
-        let home = env::var("CARGO_MANIFEST_DIR").unwrap();
-        let mut home = PathBuf::from(home);
-        home.push("tests/moller_trumbore/miss_tests.yml");
-        let tests = &YamlLoader::load_from_str(
-            &fs::read_to_string(&home).expect("Something went wrong reading miss_tests.yml"),
-        )
-        .expect("Something went wrong parsing miss_tests.yml");
-        let tests = &tests[0].as_vec().unwrap();
+        let tests: Vec<Test> = serde_yaml::from_str(include_str!(
+            "../../../tests/moller_trumbore/miss_tests.yml"
+        ))
+        .unwrap();
 
-        for test in tests.iter() {
-            let test = convert_yaml(test);
-            assert!(test.triangle.intersect(&test.ray).is_none());
+        for test in tests.into_iter() {
+            let triangle: Triangle = test.triangle.into();
+            let ray = test.ray.into();
+            let hit = triangle.intersect(&ray);
+            assert!(hit.is_none());
         }
     }
 }
