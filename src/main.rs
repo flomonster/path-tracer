@@ -141,7 +141,7 @@ mod tests {
     fn white_furnace_indirect() {
         test_scene(
             "tests/scenes/white_furnace_indirect/scene.isf",
-            "ebc76ee2c1b0a4772eaa0bc47fa01550c987d5fb",
+            "80dd0598ced75660b80170e69cad1a74fba26a15",
         );
     }
 
@@ -159,7 +159,7 @@ mod tests {
 
         test_scene_with_profile(
             "tests/scenes/white_furnace_direct/scene.isf",
-            "9a8f46e4ca407ff1791e832476128f7fdad8881b",
+            "6838e727798bd33f2f796be3edaa893445087159",
             profile,
         );
     }
