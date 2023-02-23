@@ -63,31 +63,62 @@ impl Brdf for CookTorrance {
         view_direction: Vector3<f32>,   // from hit point to the viewer
         light_direction: Vector3<f32>,  // from hit point to the light
     ) -> Vector3<f32> {
+        // let halfway = (view_direction + light_direction).normalize();
+        // let f = self.fresnel_schlick(halfway.dot(view_direction).max(0.));
+        // let g = self.geometry_smith(geometric_normal, view_direction, light_direction);
+
+        // // Specular
+        // let specular = if geometric_normal.dot(light_direction) > 0. {
+        //     let weight_num = view_direction.dot(self.microfacet_normal).abs();
+        //     let weight_denom = view_direction.dot(geometric_normal).abs()
+        //         * self.microfacet_normal.dot(geometric_normal).abs();
+        //     let weight = weight_num / weight_denom;
+        //     f * g * weight // NDF and cosine factor are canceled by PDF
+        // } else {
+        //     // If our sample is not in the upper hemisphere
+        //     Zero::zero()
+        // };
+
+        // // Diffuse
+        // let diffuse = self.compute_diffuse(f, geometric_normal, light_direction);
+
+        // diffuse + specular
+
         let halfway = (view_direction + light_direction).normalize();
+        let d = self.distribution_ggx(geometric_normal, halfway);
         let f = self.fresnel_schlick(halfway.dot(view_direction).max(0.));
         let g = self.geometry_smith(geometric_normal, view_direction, light_direction);
 
         // Specular
-        let specular = if geometric_normal.dot(light_direction) > 0. {
-            let weight_num = view_direction.dot(self.microfacet_normal).abs();
-            let weight_denom = view_direction.dot(geometric_normal).abs()
-                * self.microfacet_normal.dot(geometric_normal).abs();
-            let weight = weight_num / weight_denom;
-            f * g * weight // NDF and cosine factor are canceled by PDF
-        } else {
-            // If our sample is not in the upper hemisphere
-            Zero::zero()
-        };
+        let specular = (d * f * g)
+            / (4.
+                * geometric_normal.dot(view_direction).max(0.)
+                * geometric_normal.dot(light_direction).max(0.))
+            .max(0.0001);
+        let cosine_term = geometric_normal.dot(light_direction).max(0.);
+        let specular = specular * cosine_term;
 
         // Diffuse
         let diffuse = self.compute_diffuse(f, geometric_normal, light_direction);
 
-        diffuse + specular
+        diffuse + specular + self.emissive
     }
 
-    fn pdf(&self) -> f32 {
+    fn pdf(
+        &self,
+        geometric_normal: Vector3<f32>, // triangle normal or texture normal
+        view_direction: Vector3<f32>,   // from hit point to the viewer
+        light_direction: Vector3<f32>,
+    ) -> f32 {
         // We simplify the PDF by canceling the NDF term in the BRDF
-        1.
+        // 1.
+
+        // Use NDF of the Cook-Torrance Microfacet model as the PDF
+        let halfway = (view_direction + light_direction).normalize();
+        let ndf = self.distribution_ggx(self.microfacet_normal, halfway); // TODO: try using geometric_normal instead of halfway
+        let weight = self.microfacet_normal.dot(geometric_normal)
+            / (4. * view_direction.dot(self.microfacet_normal));
+        ndf * weight
     }
 }
 

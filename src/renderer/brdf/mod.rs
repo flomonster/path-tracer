@@ -28,7 +28,12 @@ pub trait Brdf {
         light_direction: Vector3<f32>, // from hit point to the light
     ) -> Vector3<f32>;
 
-    fn pdf(&self) -> f32;
+    fn pdf(
+        &self,
+        geometric_normal: Vector3<f32>, // triangle normal or texture normal
+        view_direction: Vector3<f32>,   // from hit point to the viewer
+        light_direction: Vector3<f32>,
+    ) -> f32;
 }
 
 // Transform any coordinate system to world coordinates
