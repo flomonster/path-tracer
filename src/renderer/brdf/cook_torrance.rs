@@ -68,9 +68,7 @@ impl Brdf for CookTorrance {
         let g = self.geometry_smith(geometric_normal, view_direction, light_direction);
 
         // Specular
-        let specular = if geometric_normal.dot(light_direction) > 0.
-            && light_direction.dot(self.microfacet_normal) > 0.
-        {
+        let specular = if geometric_normal.dot(light_direction) > 0. {
             let weight_num = view_direction.dot(self.microfacet_normal).abs();
             let weight_denom = view_direction.dot(geometric_normal).abs()
                 * self.microfacet_normal.dot(geometric_normal).abs();
