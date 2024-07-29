@@ -7,6 +7,7 @@ pub enum Light {
     Point {
         position: Vector3<f32>,
         color: Vector3<f32>,
+        #[allow(dead_code)]
         size: f32,
     },
     Directional {

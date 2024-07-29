@@ -44,8 +44,9 @@ fn run(resolution: Resolution, recv: ReceiverPixel) {
         &Default::default(),
     );
     let mut image = Image::new(resolution.width, resolution.height);
-    let mut texture = Texture::new(resolution.width, resolution.height).unwrap();
-    let mut view = View::from_rect(&FloatRect::new(
+    let mut texture = Texture::new().unwrap();
+    assert!(texture.create(resolution.width, resolution.height));
+    let mut view = View::from_rect(FloatRect::new(
         0.,
         0.,
         resolution.width as f32,
@@ -82,7 +83,7 @@ fn run(resolution: Resolution, recv: ReceiverPixel) {
 
         let start = Instant::now();
         for (pos_x, pos_y, color) in recv.try_iter() {
-            image.set_pixel(pos_x, pos_y, color);
+            unsafe { image.set_pixel(pos_x, pos_y, color) };
             if start.elapsed() > Duration::from_secs(1) / 60 {
                 break;
             }
@@ -91,7 +92,7 @@ fn run(resolution: Resolution, recv: ReceiverPixel) {
         // Draw the image
         window.clear(Color::BLACK);
         window.set_view(&view);
-        texture.update_from_image(&image, 0, 0);
+        unsafe { texture.update_from_image(&image, 0, 0) };
         let sprite = Sprite::with_texture(&texture);
         window.draw(&sprite);
 

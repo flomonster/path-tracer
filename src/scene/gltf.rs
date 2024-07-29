@@ -216,11 +216,7 @@ impl From<easy_gltf::Camera> for Camera {
 
 impl From<easy_gltf::model::Triangle> for Triangle {
     fn from(triangle: easy_gltf::model::Triangle) -> Self {
-        Self(
-            triangle[0].clone().into(),
-            triangle[1].clone().into(),
-            triangle[2].clone().into(),
-        )
+        Self(triangle[0].into(), triangle[1].into(), triangle[2].into())
     }
 }
 

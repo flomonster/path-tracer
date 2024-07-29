@@ -15,6 +15,10 @@ This project is an implementation of Monte Carlo path tracing in **Rust**.
 ![](readme/ps5_b5_s128.png "PS5 5bounces, 128samples")
 
 
+## Requirements
+
+- [SFML 2.5](https://www.sfml-dev.org/download.php)
+
 ## How to use ?
 
 The renderer takes a custom Internal Scene Format (isf) as input.
@@ -32,7 +36,7 @@ path-tracer render scene.isf -o my-render.png -p profile.yml # Render a scene wi
 
 ## Profile
 
-Profile files are used to configure the renderer behaviour. 
+Profile files are used to configure the renderer behaviour.
 
 | Option | Description | Default |
 |------------|----------------|-------------------|

@@ -42,16 +42,14 @@
             nativeBuildInputs = [
               rustChan
               mold-wrapped
+              sfml
+              csfml
           ];
             buildInputs =
               [
                 # Tools
                 cargo-watch
                 taplo
-
-                # Libs
-                sfml
-                csfml
 
                 # Nix formatter
                 alejandra.defaultPackage.${system}

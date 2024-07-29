@@ -12,9 +12,11 @@ pub struct Camera {
     pub fov: Rad<f32>,
 
     /// The distance to the far clipping plane.
+    #[allow(dead_code)]
     pub zfar: f32,
 
     /// The distance to the near clipping plane.
+    #[allow(dead_code)]
     pub znear: f32,
 }
 
